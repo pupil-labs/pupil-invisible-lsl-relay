@@ -39,6 +39,6 @@ autosummary_generate = True
 
 from importlib.metadata import version as import_version
 
-release = import_version('pupil-invisible-lsl-relay')
+release = import_version('pupil_invisible_lsl_relay')
 # for example take major/minor
 version = '.'.join(release.split('.')[:2])
