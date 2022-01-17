@@ -33,3 +33,12 @@ extensions += ['sphinx.ext.intersphinx']
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
 }
+
+html_theme = 'furo'
+autosummary_generate = True
+
+from importlib.metadata import version as import_version
+
+release = import_version('pupil-invisible-lsl-relay')
+# for example take major/minor
+version = '.'.join(release.split('.')[:2])
