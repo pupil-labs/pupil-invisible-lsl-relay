@@ -20,7 +20,7 @@ class PupilInvisibleGazeRelay:
     def push_gaze_sample(self, gaze):
         try:
             sample = [chan.query(gaze) for chan in self._channels]
-            timestamp = gaze.timestamp - self._time_offset
+            timestamp = gaze.timestamp_unix_seconds - self._time_offset
         except Exception as exc:
             logger.error(f"Error extracting gaze sample: {exc}")
             logger.debug(str(gaze))
@@ -89,7 +89,7 @@ def pi_extract_screen_query(dim):
 
 
 def pi_extract_timestamp_query():
-    return lambda gaze: gaze.timestamp
+    return lambda gaze: gaze.timestamp_unix_seconds
 
 
 class GazeChannel:
