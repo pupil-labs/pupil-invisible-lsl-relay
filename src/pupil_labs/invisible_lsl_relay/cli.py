@@ -1,6 +1,4 @@
-import abc
 import logging
-import typing
 
 import click
 
@@ -15,14 +13,18 @@ logger = logging.getLogger(__name__)
 @click.option(
     "--timeout",
     default=5.0,
-    help="Time limit in seconds to try to connect to the device (only works with --host-name argument)",
+    help=(
+        "Time limit in seconds to try to connect to the device (only works with "
+        "--host-name argument)"
+    ),
 )
 def main(host_name: str, timeout: float):
 
     if host_name is None:
         toggle_logging(enable=False)
         host_name = interactive_mode_get_host_name()
-        timeout = None  # Since the user picked a device from the discovered list, ignore the timeout
+        # Since the user picked a device from the discovered list, ignore the timeout
+        timeout = None
 
     if host_name is None:
         exit(0)

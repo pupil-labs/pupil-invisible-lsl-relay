@@ -1,6 +1,5 @@
 import logging
 import threading
-import typing as T
 
 import ndsi
 
@@ -119,7 +118,9 @@ class InteractionController(DiscoveryController):
     def _discovery_run(self):
         while not self._network_should_stop.wait(1):
             self.poll_events()
-        super().cleanup()  # NOTE: Only call super implementation, since it is the one running in the background thread.
+        # NOTE: Only call super implementation, since it is the one running in the
+        # background thread.
+        super().cleanup()
 
     def cleanup(self):
         self._network_should_stop.set()
