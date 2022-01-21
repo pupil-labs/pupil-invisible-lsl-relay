@@ -1,5 +1,5 @@
 from pupil_labs.realtime_api.simple import discover_devices
-from pupil_invisible_lsl_relay import pi_gaze_relay
+from pupil_labs.invisible_lsl_relay import pi_gaze_relay
 
 
 class SimpleDiscovery:
