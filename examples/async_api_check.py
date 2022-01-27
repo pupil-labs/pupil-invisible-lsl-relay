@@ -6,6 +6,8 @@ from pupil_labs.realtime_api.discovery import discover_devices
 from pupil_labs.invisible_lsl_relay import pi_gaze_relay
 import logging
 
+logger = logging.getLogger(__name__)
+
 
 class DeviceDiscoverer:
     def __init__(self):
@@ -19,13 +21,13 @@ class DeviceDiscoverer:
         self.device_list = [device async for device in device_discoverer]
 
     async def get_user_selected_device(self):
+        print("Looking for devices in the network...")
         while not self.device_list:
-            print('Looking for devices in the network...')
             await self.get_devices_in_network()
             self.n_network_searches += 1
 
             if self.n_network_searches > 10:
-                raise TimeoutError('No device was found in 10 searches.')
+                raise TimeoutError("No device was found in 10 searches.")
 
         while self.selected_device_info is None:
             print("\n======================================")
@@ -41,18 +43,18 @@ class DeviceDiscoverer:
                 user_input = user_input.strip()
 
             if user_input.upper() == 'R':
-                print("Reloading the device list.")
+                logger.debug("Reloading the device list.")
                 await self.get_devices_in_network()
                 continue
             try:
                 user_input = int(user_input)
             except ValueError:
-                print(f"Select a device number from the available indices.")
+                print("Select a device number from the available indices.")
                 continue
 
             # check user input for validity
             if user_input < len(self.device_list):
-                print('valid device selected')
+                logger.debug("valid device selected")
                 self.selected_device_info = self.device_list[int(user_input)]
 
 
@@ -60,7 +62,7 @@ class DeviceConnector:
 
     def __init__(self, device_info):
         self.connected_device = Device.from_discovered_device(device_info)
-        print(f"connected with {self.connected_device}")
+        logger.debug("connected with %s", self.connected_device)
         self.notifier = None
         self.status = None
         self.gaze_sensor = None
@@ -77,7 +79,7 @@ class DeviceConnector:
 
     async def fetch_gaze(self):
         async for gaze in receive_gaze_data(
-            self.gaze_sensor.url, run_loop=True
+            self.gaze_sensor.url, run_loop=True, log_level=30
         ):
             await self.gaze_queue.put(gaze)
 
@@ -85,13 +87,14 @@ class DeviceConnector:
         self.stream_task = asyncio.create_task(self.fetch_gaze())
 
     async def on_sensor_connect(self):
+        logger.debug('Sensor connected.')
         if not self.stream_task:
             await self.start_streaming_task()
         if self.cleanup_task:
             self.cleanup_task.cancel()
             print(self.cleanup_task)
             self.cleanup_task = None
-            print('Sensor was reconnected. Relay will continue.')
+            logger.info("Sensor was connected. Relay will be started.")
 
     async def cleanup(self):
         await self.notifier.receive_updates_stop()
@@ -104,11 +107,12 @@ class DeviceConnector:
             self.cleanup_task.cancel()
 
     async def cleanup_after_timeout(self):
-        print('Sensor not connected. Relay will close in 60 seconds.')
+        logger.warning('Sensor is not connected. Relay will close in 60 seconds.')
         await asyncio.sleep(60)
         await self.cleanup()
 
     async def on_sensor_disconnect(self):
+        logger.debug('Sensor disconnected')
         if self.stream_task:
             self.stream_task.cancel()
             print(self.stream_task)
@@ -153,7 +157,8 @@ async def main():
     try:
         await discoverer.get_user_selected_device()
     except TimeoutError:
-        print('Make sure your device is connected to the same network.')
+        logger.error('Make sure your device is connected to the same network.',
+                     exc_info=True)
     assert discoverer.selected_device_info
     connection = DeviceConnector(discoverer.selected_device_info)
 
@@ -165,7 +170,7 @@ async def main():
 
         while not (connection.stream_task and connection.relay_task):
             await asyncio.sleep(0.1)
-
+        logging.getLogger("aiortsp.rtsp.reader").setLevel(logging.WARNING)
         await asyncio.gather(*[connection.stream_task, connection.relay_task],
                              return_exceptions=True)
 
@@ -177,5 +182,5 @@ async def main():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     asyncio.run(main(), debug=True)
