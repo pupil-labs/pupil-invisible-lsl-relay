@@ -1,10 +1,12 @@
 import asyncio
 import concurrent.futures
-from pupil_labs.realtime_api import Device, StatusUpdateNotifier, receive_gaze_data
-from pupil_labs.realtime_api.models import Sensor
-from pupil_labs.realtime_api.discovery import discover_devices
-from pupil_labs.invisible_lsl_relay import pi_gaze_relay
 import logging
+
+from pupil_labs.realtime_api import Device, StatusUpdateNotifier, receive_gaze_data
+from pupil_labs.realtime_api.discovery import discover_devices
+from pupil_labs.realtime_api.models import Sensor
+
+from pupil_labs.invisible_lsl_relay import pi_gaze_relay
 
 logger = logging.getLogger(__name__)
 
@@ -12,9 +14,9 @@ logger = logging.getLogger(__name__)
 async def input_async():
     # based on https://gist.github.com/delivrance/675a4295ce7dc70f0ce0b164fcdbd798?permalink_comment_id=3590322#gistcomment-3590322
     with concurrent.futures.ThreadPoolExecutor(1, 'AsyncInput') as executor:
-        user_input = await asyncio.get_event_loop().run_in_executor(executor,
-                                                                    input,
-                                                                    '>>> ')
+        user_input = await asyncio.get_event_loop().run_in_executor(
+            executor, input, '>>> '
+        )
         return user_input.strip()
 
 
@@ -65,7 +67,6 @@ class DeviceDiscoverer:
 
 
 class DataReceiver:
-
     def __init__(self, device_info):
         self.connected_device = Device.from_discovered_device(device_info)
         logger.debug("connected with %s", self.connected_device)
@@ -118,8 +119,9 @@ class DataReceiver:
                 await self.check_sensors()
 
     async def make_notifier(self):
-        self.notifier = StatusUpdateNotifier(self.connected_device,
-                                             callbacks=[self.on_update])
+        self.notifier = StatusUpdateNotifier(
+            self.connected_device, callbacks=[self.on_update]
+        )
 
     async def start_status_updates(self):
         await self.make_notifier()
@@ -156,7 +158,9 @@ class Adapter:
         empty_time = 0
         while empty_time < timeout:
             if not self.receiver.stream_task:
-                logger.warning(f'Gaze sensor stopped streaming. Disconnecting in {timeout-empty_time} seconds')
+                logger.warning(
+                    f'Gaze sensor stopped streaming. Disconnecting in {timeout-empty_time} seconds'
+                )
                 empty_time += 1
             else:
                 empty_time = 0
@@ -183,8 +187,9 @@ async def main():
     try:
         await discoverer.get_user_selected_device()
     except TimeoutError:
-        logger.error('Make sure your device is connected to the same network.',
-                     exc_info=True)
+        logger.error(
+            'Make sure your device is connected to the same network.', exc_info=True
+        )
     assert discoverer.selected_device_info
     adapter = Adapter(discoverer.selected_device_info)
     await adapter.relay_receiver_to_publisher()
@@ -194,4 +199,3 @@ async def main():
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     asyncio.run(main(), debug=True)
-
