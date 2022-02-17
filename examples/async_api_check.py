@@ -3,8 +3,9 @@ import concurrent.futures
 import logging
 
 from pupil_labs.realtime_api import Device, StatusUpdateNotifier, receive_gaze_data
-from pupil_labs.realtime_api.models import Sensor
 from pupil_labs.realtime_api.discovery import Network
+from pupil_labs.realtime_api.models import Sensor
+
 from pupil_labs.invisible_lsl_relay import pi_gaze_relay
 
 logger = logging.getLogger(__name__)
@@ -64,8 +65,9 @@ class DeviceDiscoverer:
 
                 print("To reload the list, hit enter.")
                 user_input = await input_async()
-                self.selected_device_info = evaluate_user_input(user_input,
-                                                                network.devices)
+                self.selected_device_info = evaluate_user_input(
+                    user_input, network.devices
+                )
 
 
 class DataReceiver:
@@ -89,8 +91,7 @@ class DataReceiver:
 
     async def make_status_update_notifier(self):
         async with Device.from_discovered_device(self.device_info) as device:
-            self.notifier = StatusUpdateNotifier(device,
-                                                 callbacks=[self.on_update])
+            self.notifier = StatusUpdateNotifier(device, callbacks=[self.on_update])
             await self.notifier.receive_updates_start()
 
     async def cleanup(self):
@@ -108,8 +109,9 @@ class Adapter:
     async def receive_gaze_sample(self):
         while True:
             if self.receiver.gaze_sensor_url:
-                async for gaze in receive_gaze_data(self.receiver.gaze_sensor_url,
-                                                    run_loop=True, log_level=30):
+                async for gaze in receive_gaze_data(
+                    self.receiver.gaze_sensor_url, run_loop=True, log_level=30
+                ):
                     await self.gaze_sample_queue.put(gaze)
             else:
                 logger.debug('The gaze sensor was not yet identified.')
@@ -125,8 +127,10 @@ class Adapter:
                     missing_sample_duration = 0
             except asyncio.TimeoutError:
                 missing_sample_duration += timeout
-                logger.warning('No gaze sample was received for %i seconds.',
-                               missing_sample_duration)
+                logger.warning(
+                    'No gaze sample was received for %i seconds.',
+                    missing_sample_duration,
+                )
 
     async def start_receiving_task(self):
         if self.receiving_task:
@@ -145,8 +149,7 @@ class Adapter:
         await self.start_receiving_task()
         await self.start_publishing_task()
         tasks = [self.receiving_task, self.publishing_task]
-        done, pending = await asyncio.wait(tasks,
-                                           return_when=asyncio.FIRST_COMPLETED)
+        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
 
         handle_done_pending_tasks(done, pending)
         await self.receiver.cleanup()
