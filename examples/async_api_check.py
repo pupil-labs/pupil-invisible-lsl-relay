@@ -1,10 +1,11 @@
 import asyncio
 import concurrent.futures
+import logging
+
 from pupil_labs.realtime_api import Device, StatusUpdateNotifier, receive_gaze_data
 from pupil_labs.realtime_api.models import Sensor
 from pupil_labs.realtime_api.discovery import Network
 from pupil_labs.invisible_lsl_relay import pi_gaze_relay
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -12,9 +13,9 @@ logger = logging.getLogger(__name__)
 async def input_async():
     # based on https://gist.github.com/delivrance/675a4295ce7dc70f0ce0b164fcdbd798?permalink_comment_id=3590322#gistcomment-3590322
     with concurrent.futures.ThreadPoolExecutor(1, 'AsyncInput') as executor:
-        user_input = await asyncio.get_event_loop().run_in_executor(executor,
-                                                                    input,
-                                                                    '>>> ')
+        user_input = await asyncio.get_event_loop().run_in_executor(
+            executor, input, '>>> '
+        )
         return user_input.strip()
 
 
@@ -68,7 +69,6 @@ class DeviceDiscoverer:
 
 
 class DataReceiver:
-
     def __init__(self, device_info):
         self.device_info = device_info
         self.notifier = None
@@ -157,8 +157,9 @@ async def main():
     try:
         await discoverer.get_user_selected_device()
     except TimeoutError:
-        logger.error('Make sure your device is connected to the same network.',
-                     exc_info=True)
+        logger.error(
+            'Make sure your device is connected to the same network.', exc_info=True
+        )
     assert discoverer.selected_device_info
     adapter = Adapter(discoverer.selected_device_info)
     await adapter.relay_receiver_to_publisher()

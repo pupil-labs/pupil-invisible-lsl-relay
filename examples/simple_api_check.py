@@ -1,4 +1,5 @@
 from pupil_labs.realtime_api.simple import discover_devices
+
 from pupil_labs.invisible_lsl_relay import pi_gaze_relay
 
 
@@ -28,7 +29,9 @@ class SimpleDiscovery:
                 try:
                     user_input = int(user_input)
                 except ValueError:
-                    print(f"Your input must be a number between 0 and {len(self.device_list) - 1}")
+                    print(
+                        f"Your input must be a number between 0 and {len(self.device_list) - 1}"
+                    )
                     continue
 
                 # check user input for validity
