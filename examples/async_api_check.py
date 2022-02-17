@@ -2,7 +2,7 @@ import asyncio
 import concurrent.futures
 from pupil_labs.realtime_api import Device, StatusUpdateNotifier, receive_gaze_data
 from pupil_labs.realtime_api.models import Sensor
-from pupil_labs.realtime_api.discovery import discover_devices
+from pupil_labs.realtime_api.discovery import Network
 from pupil_labs.invisible_lsl_relay import pi_gaze_relay
 import logging
 
@@ -18,168 +18,142 @@ async def input_async():
         return user_input.strip()
 
 
-class DeviceDiscoverer:
-    def __init__(self):
-        self.device_list = None
-        self.selected_device_info = None
-        self.search_timeout = 10
-        self.n_network_searches = 0
+def evaluate_user_input(user_input, device_list):
+    try:
+        device_info = device_list[int(user_input)]
+        return device_info
+    except ValueError:
+        logger.debug("Reloading the device list.")
+        return None
+    except IndexError:
+        print('Please choose an index from the list!')
+        return None
 
-    async def get_devices_in_network(self):
-        device_discoverer = discover_devices(timeout_seconds=self.search_timeout)
-        self.device_list = [device async for device in device_discoverer]
+
+def handle_done_pending_tasks(done, pending):
+    for done_task in done:
+        try:
+            done_task.result()
+        except asyncio.CancelledError:
+            logger.warning(f"Cancelled: {done_task}")
+
+    for pending_task in pending:
+        try:
+            pending_task.cancel()
+        except asyncio.CancelledError:
+            # cancelling is the intended behaviour
+            pass
+
+
+class DeviceDiscoverer:
+    def __init__(self, search_timeout):
+        self.selected_device_info = None
+        self.search_timeout = search_timeout
 
     async def get_user_selected_device(self):
-        # Todo make less complex
-        print("Looking for devices in the network...")
-        while not self.device_list:
-            await self.get_devices_in_network()
-            self.n_network_searches += 1
+        async with Network() as network:
+            print("Looking for devices in your network...\n\t", end="")
+            await network.wait_for_new_device(timeout_seconds=self.search_timeout)
 
-            if self.n_network_searches > 10:
-                raise TimeoutError("No device was found in 10 searches.")
+            while self.selected_device_info is None:
+                print("\n======================================")
+                print("Please select a Pupil Invisible device by index:")
+                for device_index, device_name in enumerate(network.devices):
+                    print(f"\t{device_index}\t{device_name}")
 
-        while self.selected_device_info is None:
-            print("\n======================================")
-            print("Please select a Pupil Invisible device by index:")
-            for device_index, device_name in enumerate(self.device_list):
-                print(f"\t{device_index}\t{device_name}")
-
-            print("To reload the list, type 'R'")
-            user_input = await input_async()
-
-            if user_input.upper() == 'R':
-                logger.debug("Reloading the device list.")
-                await self.get_devices_in_network()
-                continue
-            try:
-                user_input = int(user_input)
-            except ValueError:
-                print("Select a device number from the available indices.")
-                continue
-
-            # check user input for validity
-            if user_input < len(self.device_list):
-                logger.debug("valid device selected")
-                self.selected_device_info = self.device_list[int(user_input)]
+                print("To reload the list, hit enter.")
+                user_input = await input_async()
+                self.selected_device_info = evaluate_user_input(user_input,
+                                                                network.devices)
 
 
 class DataReceiver:
 
     def __init__(self, device_info):
-        self.connected_device = Device.from_discovered_device(device_info)
-        logger.debug("connected with %s", self.connected_device)
+        self.device_info = device_info
         self.notifier = None
         self.status = None
-        self.gaze_sensor = None
+        self.gaze_sensor_url = None
         # self.world_sensor = None
-        self.gaze_queue = asyncio.Queue()
-        self.stream_task = None
 
     async def update_status(self):
-        self.status = await self.connected_device.get_status()
-        self.gaze_sensor = self.status.direct_gaze_sensor()
-        # self.world_sensor = self.status.direct_world_sensor()
-
-    async def fetch_gaze(self):
-        async for gaze in receive_gaze_data(
-            self.gaze_sensor.url, run_loop=True, log_level=30
-        ):
-            await self.gaze_queue.put(gaze)
-
-    async def start_streaming_task(self):
-        if self.stream_task:
-            self.stream_task.cancel()
-            self.stream_task = None
-        self.stream_task = asyncio.create_task(self.fetch_gaze())
-
-    async def on_sensor_connect(self):
-        logger.debug('Sensor connected.')
-        if not self.stream_task:
-            await self.start_streaming_task()
-            logger.info("Sensor was connected. Relay will be started.")
-
-    async def on_sensor_disconnect(self):
-        logger.warning("Sensor was disconnected.")
-        if self.stream_task:
-            self.stream_task.cancel()
-            self.stream_task = None
-
-    async def check_sensors(self):
-        if self.gaze_sensor.connected:
-            await self.on_sensor_connect()
-        else:
-            await self.on_sensor_disconnect()
+        async with Device.from_discovered_device(self.device_info) as device:
+            self.status = await device.get_status()
+            self.gaze_sensor_url = self.status.direct_gaze_sensor().url
+            # self.world_sensor = self.status.direct_world_sensor()
 
     async def on_update(self, component):
         if isinstance(component, Sensor):
             if component.sensor == 'gaze' and component.conn_type == 'DIRECT':
                 await self.update_status()
-                await self.check_sensors()
 
-    async def make_notifier(self):
-        self.notifier = StatusUpdateNotifier(self.connected_device,
-                                             callbacks=[self.on_update])
-
-    async def start_status_updates(self):
-        await self.make_notifier()
-        await self.notifier.receive_updates_start()
-
-    async def start_receiving(self):
-        await self.update_status()
-        await self.start_status_updates()
+    async def make_status_update_notifier(self):
+        async with Device.from_discovered_device(self.device_info) as device:
+            self.notifier = StatusUpdateNotifier(device,
+                                                 callbacks=[self.on_update])
+            await self.notifier.receive_updates_start()
 
     async def cleanup(self):
         await self.notifier.receive_updates_stop()
-        await self.connected_device.close()
-        if self.stream_task:
-            self.stream_task.cancel()
 
 
 class Adapter:
     def __init__(self, selected_device):
         self.receiver = DataReceiver(selected_device)
         self.publisher = pi_gaze_relay.PupilInvisibleGazeRelay()
-        self.timeout_check_task = None
-        self.receiver_to_publisher_task = None
+        self.gaze_sample_queue = asyncio.Queue()
+        self.publishing_task = None
+        self.receiving_task = None
 
-    async def push_to_publisher(self):
+    async def receive_gaze_sample(self):
         while True:
-            sample = await self.receiver.gaze_queue.get()
-            self.publisher.push_gaze_sample(sample)
-
-    async def cleanup(self):
-        await self.receiver.cleanup()
-        self.receiver_to_publisher_task.cancel()
-
-    async def check_timeout_on_receiver(self, timeout=60):
-        empty_time = 0
-        while empty_time < timeout:
-            if not self.receiver.stream_task:
-                logger.warning(f'Gaze sensor stopped streaming. Disconnecting in {timeout-empty_time} seconds')
-                empty_time += 1
+            if self.receiver.gaze_sensor_url:
+                async for gaze in receive_gaze_data(self.receiver.gaze_sensor_url,
+                                                    run_loop=True, log_level=30):
+                    await self.gaze_sample_queue.put(gaze)
             else:
-                empty_time = 0
-            await asyncio.sleep(1)
-        await self.cleanup()
+                logger.debug('The gaze sensor was not yet identified.')
+                await asyncio.sleep(1)
+
+    async def publish_gaze_sample(self, timeout):
+        missing_sample_duration = 0
+        while True:
+            try:
+                sample = await asyncio.wait_for(self.gaze_sample_queue.get(), timeout)
+                self.publisher.push_gaze_sample(sample)
+                if missing_sample_duration:
+                    missing_sample_duration = 0
+            except asyncio.TimeoutError:
+                missing_sample_duration += timeout
+                logger.warning('No gaze sample was received for %i seconds.',
+                               missing_sample_duration)
+
+    async def start_receiving_task(self):
+        if self.receiving_task:
+            logger.debug('Tried to set a new receiving task, but the task is running.')
+            return
+        self.receiving_task = asyncio.create_task(self.receive_gaze_sample())
+
+    async def start_publishing_task(self):
+        if self.publishing_task:
+            logger.debug('Tried to set a new publishing task, but the task is running.')
+            return
+        self.publishing_task = asyncio.create_task(self.publish_gaze_sample(10))
 
     async def relay_receiver_to_publisher(self):
-        await self.receiver.start_receiving()
+        await self.receiver.make_status_update_notifier()
+        await self.start_receiving_task()
+        await self.start_publishing_task()
+        tasks = [self.receiving_task, self.publishing_task]
+        done, pending = await asyncio.wait(tasks,
+                                           return_when=asyncio.FIRST_COMPLETED)
 
-        if self.receiver_to_publisher_task:
-            self.receiver_to_publisher_task.cancel()
-            self.receiver_to_publisher_task = None
-        self.timeout_check_task = asyncio.create_task(self.check_timeout_on_receiver())
-        self.receiver_to_publisher_task = asyncio.create_task(self.push_to_publisher())
-        try:
-            await self.receiver_to_publisher_task
-        except asyncio.CancelledError:
-            await self.cleanup()
-        # todo: handle keyboard interrupt
+        handle_done_pending_tasks(done, pending)
+        await self.receiver.cleanup()
 
 
 async def main():
-    discoverer = DeviceDiscoverer()
+    discoverer = DeviceDiscoverer(10)
     try:
         await discoverer.get_user_selected_device()
     except TimeoutError:
@@ -192,6 +166,8 @@ async def main():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    asyncio.run(main(), debug=True)
-
+    try:
+        logging.basicConfig(level=logging.INFO)
+        asyncio.run(main(), debug=True)
+    except KeyboardInterrupt:
+        logger.warning("The relay was closed via keyboard interrupt")
