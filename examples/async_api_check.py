@@ -77,7 +77,6 @@ class DataReceiver:
         self.gaze_sensor_url = None
         # self.world_sensor = None
 
-
     async def on_update(self, component):
         if isinstance(component, Sensor):
             if component.sensor == 'gaze' and component.conn_type == 'DIRECT':
