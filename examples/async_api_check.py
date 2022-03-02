@@ -74,20 +74,14 @@ class DataReceiver:
     def __init__(self, device_info):
         self.device_info = device_info
         self.notifier = None
-        self.status = None
         self.gaze_sensor_url = None
         # self.world_sensor = None
 
-    async def update_status(self):
-        async with Device.from_discovered_device(self.device_info) as device:
-            self.status = await device.get_status()
-            self.gaze_sensor_url = self.status.direct_gaze_sensor().url
-            # self.world_sensor = self.status.direct_world_sensor()
 
     async def on_update(self, component):
         if isinstance(component, Sensor):
             if component.sensor == 'gaze' and component.conn_type == 'DIRECT':
-                await self.update_status()
+                self.gaze_sensor_url = component.url
 
     async def make_status_update_notifier(self):
         async with Device.from_discovered_device(self.device_info) as device:
