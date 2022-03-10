@@ -20,8 +20,9 @@ class PupilInvisibleRelay:
 
 class PupilInvisibleGazeRelay(PupilInvisibleRelay):
     def __init__(self, outlet_uuid=None):
-        PupilInvisibleRelay.__init__(self,
-                                     pi_gaze_channels, pi_gaze_outlet, outlet_uuid)
+        PupilInvisibleRelay.__init__(
+            self, pi_gaze_channels, pi_gaze_outlet, outlet_uuid
+        )
 
     def push_gaze_sample(self, gaze):
         try:
@@ -38,8 +39,9 @@ class PupilInvisibleGazeRelay(PupilInvisibleRelay):
 
 class PupilInvisibleEventRelay(PupilInvisibleRelay):
     def __init__(self, outlet_uuid=None):
-        PupilInvisibleRelay.__init__(self,
-                                     pi_event_channels, pi_event_outlet, outlet_uuid)
+        PupilInvisibleRelay.__init__(
+            self, pi_event_channels, pi_event_outlet, outlet_uuid
+        )
 
     def push_event_to_outlet(self, event):
         event_name = [chan.query(event) for chan in self._channels]
