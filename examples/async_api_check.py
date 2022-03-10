@@ -4,7 +4,7 @@ import logging
 
 from pupil_labs.realtime_api import Device, StatusUpdateNotifier, receive_gaze_data
 from pupil_labs.realtime_api.discovery import Network
-from pupil_labs.realtime_api.models import Sensor, Event
+from pupil_labs.realtime_api.models import Event, Sensor
 
 from pupil_labs.invisible_lsl_relay import pi_gaze_relay
 
@@ -100,26 +100,32 @@ class Adapter:
 
     async def start_publishing_gaze(self):
         if self.publishing_gaze_task:
-            logger.debug('Tried to set a new gaze publishing task, '
-                         'but the task is running.')
+            logger.debug(
+                'Tried to set a new gaze publishing task, ' 'but the task is running.'
+            )
             return
         self.publishing_gaze_task = asyncio.create_task(self.publish_gaze_sample(10))
 
     async def start_publishing_event(self):
         if self.publishing_event_task:
-            logger.debug('Tried to set new event publishing task, '
-                         'but the task is running.')
+            logger.debug(
+                'Tried to set new event publishing task, ' 'but the task is running.'
+            )
             return
         self.publishing_event_task = asyncio.create_task(
-            self.publish_event_from_queue())
+            self.publish_event_from_queue()
+        )
 
     async def relay_receiver_to_publisher(self):
         await self.receiver.make_status_update_notifier()
         await self.start_receiving_task()
         await self.start_publishing_gaze()
         await self.start_publishing_event()
-        tasks = [self.receiving_task, self.publishing_gaze_task,
-                 self.publishing_event_task]
+        tasks = [
+            self.receiving_task,
+            self.publishing_gaze_task,
+            self.publishing_event_task,
+        ]
         done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
 
         handle_done_pending_tasks(done, pending)
