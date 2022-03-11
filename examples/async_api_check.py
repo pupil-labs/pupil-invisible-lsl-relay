@@ -6,7 +6,7 @@ from pupil_labs.realtime_api import Device, StatusUpdateNotifier, receive_gaze_d
 from pupil_labs.realtime_api.discovery import Network
 from pupil_labs.realtime_api.models import Event, Sensor
 
-from pupil_labs.invisible_lsl_relay import pi_gaze_relay
+from pupil_labs.invisible_lsl_relay import pi_relay
 
 logger = logging.getLogger(__name__)
 
@@ -51,8 +51,8 @@ class DeviceDiscoverer:
 class Adapter:
     def __init__(self, selected_device):
         self.receiver = DataReceiver(selected_device)
-        self.gaze_publisher = pi_gaze_relay.PupilInvisibleGazeRelay()
-        self.event_publisher = pi_gaze_relay.PupilInvisibleEventRelay()
+        self.gaze_publisher = pi_relay.PupilInvisibleGazeRelay()
+        self.event_publisher = pi_relay.PupilInvisibleEventRelay()
         self.gaze_sample_queue = asyncio.Queue()
         self.publishing_gaze_task = None
         self.publishing_event_task = None
