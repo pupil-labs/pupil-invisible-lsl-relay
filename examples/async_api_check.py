@@ -124,7 +124,7 @@ class Adapter:
         tasks = [
             self.receiving_task,
             self.publishing_gaze_task,
-            self.publishing_event_task
+            self.publishing_event_task,
         ]
         done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
 

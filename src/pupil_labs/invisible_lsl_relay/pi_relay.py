@@ -11,13 +11,20 @@ logger = logging.getLogger(__name__)
 
 
 class PupilInvisibleRelay:
-    def __init__(self, channel_func, outlet_name, outlet_format, timestamp_query,
-                 outlet_uuid=None):
+    def __init__(
+        self,
+        channel_func,
+        outlet_name,
+        outlet_format,
+        timestamp_query,
+        outlet_uuid=None,
+    ):
         self._time_offset = time.time() - lsl.local_clock()
         self._outlet_uuid = outlet_uuid or str(uuid.uuid4())
         self._channels = channel_func()
-        self._outlet = pi_create_outlet(self._outlet_uuid, self._channels, outlet_name,
-                                        outlet_format)
+        self._outlet = pi_create_outlet(
+            self._outlet_uuid, self._channels, outlet_name, outlet_format
+        )
         self._timestamp_query = timestamp_query
 
     def push_sample_to_outlet(self, sample):
@@ -33,22 +40,26 @@ class PupilInvisibleRelay:
 
 class PupilInvisibleGazeRelay(PupilInvisibleRelay):
     def __init__(self, outlet_uuid=None):
-        PupilInvisibleRelay.__init__(self,
-                                     pi_gaze_channels,
-                                     'Gaze',
-                                     lsl.cf_double64,
-                                     pi_extract_from_sample('timestamp_unix_seconds'),
-                                     outlet_uuid)
+        PupilInvisibleRelay.__init__(
+            self,
+            pi_gaze_channels,
+            'Gaze',
+            lsl.cf_double64,
+            pi_extract_from_sample('timestamp_unix_seconds'),
+            outlet_uuid,
+        )
 
 
 class PupilInvisibleEventRelay(PupilInvisibleRelay):
     def __init__(self, outlet_uuid=None):
-        PupilInvisibleRelay.__init__(self,
-                                     pi_event_channels,
-                                     'Event',
-                                     'string',
-                                     pi_extract_from_sample('timestamp'),
-                                     outlet_uuid)
+        PupilInvisibleRelay.__init__(
+            self,
+            pi_event_channels,
+            'Event',
+            'string',
+            pi_extract_from_sample('timestamp'),
+            outlet_uuid,
+        )
 
 
 def pi_create_outlet(outlet_uuid, channels, outlet_name, outlet_format):
@@ -74,10 +85,7 @@ def pi_event_channels():
     return [
         PiChannel(
             query=pi_extract_from_sample('name'),
-            channel_information_dict={
-                'label': "Event",
-                'format': "string"
-            }
+            channel_information_dict={'label': "Event", 'format': "string"},
         )
     ]
 
@@ -92,11 +100,11 @@ def pi_gaze_channels():
                 query=pi_extract_screen_query(i),
                 channel_information_dict={
                     'label': "xy"[i],
-                    'eye':"both",
-                    'metatype':"Screen" + "XY"[i],
-                    'unit':"pixels",
-                    'coordinate_system':"world"
-                }
+                    'eye': "both",
+                    'metatype': "Screen" + "XY"[i],
+                    'unit': "pixels",
+                    'coordinate_system': "world",
+                },
             )
             for i in range(2)
         ]
@@ -111,9 +119,8 @@ def pi_gaze_channels():
                     'label': "pi_timestamp",
                     'eye': "both",
                     'metatype': "PupilInvisibleTimestamp",
-                    'unit': "seconds"
-                }
-
+                    'unit': "seconds",
+                },
             )
         ]
     )
