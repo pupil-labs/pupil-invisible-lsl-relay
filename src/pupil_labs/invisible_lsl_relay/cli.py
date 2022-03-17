@@ -5,7 +5,7 @@ import typing
 import click
 
 from .controllers import ConnectionController, InteractionController
-from .pi_gaze_relay import PupilInvisibleGazeRelay
+from .pi_relay import PupilInvisibleGazeRelay
 
 logger = logging.getLogger(__name__)
 

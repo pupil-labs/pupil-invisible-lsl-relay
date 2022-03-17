@@ -74,7 +74,7 @@ class Adapter:
         while True:
             try:
                 sample = await asyncio.wait_for(self.gaze_sample_queue.get(), timeout)
-                self.gaze_publisher.push_gaze_sample(sample)
+                self.gaze_publisher.push_sample_to_outlet(sample)
                 if missing_sample_duration:
                     missing_sample_duration = 0
             except asyncio.TimeoutError:
@@ -87,7 +87,7 @@ class Adapter:
     async def publish_event_from_queue(self):
         while True:
             event = await self.receiver.event_queue.get()
-            self.event_publisher.push_event_to_outlet(event)
+            self.event_publisher.push_sample_to_outlet(event)
 
     async def start_receiving_task(self):
         if self.receiving_task:
@@ -101,7 +101,7 @@ class Adapter:
     async def start_publishing_gaze(self):
         if self.publishing_gaze_task:
             logger.debug(
-                'Tried to set a new gaze publishing task, ' 'but the task is running.'
+                'Tried to set a new gaze publishing task, but the task is running.'
             )
             return
         self.publishing_gaze_task = asyncio.create_task(self.publish_gaze_sample(10))
@@ -109,7 +109,7 @@ class Adapter:
     async def start_publishing_event(self):
         if self.publishing_event_task:
             logger.debug(
-                'Tried to set new event publishing task, ' 'but the task is running.'
+                'Tried to set new event publishing task, but the task is running.'
             )
             return
         self.publishing_event_task = asyncio.create_task(
@@ -124,7 +124,7 @@ class Adapter:
         tasks = [
             self.receiving_task,
             self.publishing_gaze_task,
-            self.publishing_event_task,
+            self.publishing_event_task
         ]
         done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
 
