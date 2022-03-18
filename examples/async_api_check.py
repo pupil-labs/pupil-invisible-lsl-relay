@@ -1,5 +1,6 @@
 import asyncio
 import concurrent.futures
+import inspect
 import logging
 
 from pupil_labs.realtime_api import Device, StatusUpdateNotifier, receive_gaze_data
@@ -53,6 +54,7 @@ class Adapter:
         self.receiver = DataReceiver(selected_device)
         self.gaze_publisher = pi_relay.PupilInvisibleGazeRelay()
         self.event_publisher = pi_relay.PupilInvisibleEventRelay()
+        self.timestamp_publisher = pi_relay.PupilInvisibleTimestampRelay()
         self.gaze_sample_queue = asyncio.Queue()
         self.publishing_gaze_task = None
         self.publishing_event_task = None
@@ -75,6 +77,7 @@ class Adapter:
             try:
                 sample = await asyncio.wait_for(self.gaze_sample_queue.get(), timeout)
                 self.gaze_publisher.push_sample_to_outlet(sample)
+                self.timestamp_publisher.push_sample_to_outlet(sample)
                 if missing_sample_duration:
                     missing_sample_duration = 0
             except asyncio.TimeoutError:
@@ -88,15 +91,13 @@ class Adapter:
         while True:
             event = await self.receiver.event_queue.get()
             self.event_publisher.push_sample_to_outlet(event)
+            self.timestamp_publisher.push_sample_to_outlet(event)
 
     async def start_receiving_task(self):
         if self.receiving_task:
             logger.debug('Tried to set a new receiving task, but the task is running.')
             return
         self.receiving_task = asyncio.create_task(self.receive_gaze_sample())
-
-    # TODO: start publishing gaze and start publishing event have a very similar
-    #  structure - can I merge these functions to one?
 
     async def start_publishing_gaze(self):
         if self.publishing_gaze_task:
@@ -127,7 +128,6 @@ class Adapter:
             self.publishing_event_task
         ]
         done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-
         handle_done_pending_tasks(done, pending)
         await self.receiver.cleanup()
 
@@ -145,7 +145,8 @@ class DataReceiver:
             if component.sensor == 'gaze' and component.conn_type == 'DIRECT':
                 self.gaze_sensor_url = component.url
         elif isinstance(component, Event):
-            await self.event_queue.put(component)
+            adapted_event = EventAdapter(component)
+            await self.event_queue.put(adapted_event)
 
     async def make_status_update_notifier(self):
         async with Device.from_discovered_device(self.device_info) as device:
@@ -154,6 +155,13 @@ class DataReceiver:
 
     async def cleanup(self):
         await self.notifier.receive_updates_stop()
+
+
+class EventAdapter:
+    def __init__(self, sample):
+        self.name = sample.name
+        self.timestamp_unix_ns = sample.timestamp
+        self.timestamp_unix_seconds = self.timestamp_unix_ns * 1e-9
 
 
 async def input_async():

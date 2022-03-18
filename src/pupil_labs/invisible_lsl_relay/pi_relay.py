@@ -22,8 +22,8 @@ class PupilInvisibleRelay:
 
     def push_sample_to_outlet(self, sample):
         try:
-            sample_to_push = [chan.query(sample) for chan in self._channels]
-            timestamp_to_push = self._timestamp_query(sample)
+            sample_to_push = [chan.sample_query(sample) for chan in self._channels]
+            timestamp_to_push = self._timestamp_query(sample) - self._time_offset
         except Exception as exc:
             logger.error(f"Error extracting from sample: {exc}")
             logger.debug(str(sample))
@@ -34,21 +34,31 @@ class PupilInvisibleRelay:
 class PupilInvisibleGazeRelay(PupilInvisibleRelay):
     def __init__(self, outlet_uuid=None):
         PupilInvisibleRelay.__init__(self,
-                                     pi_gaze_channels,
-                                     'Gaze',
-                                     lsl.cf_double64,
-                                     pi_extract_from_sample('timestamp_unix_seconds'),
-                                     outlet_uuid)
+                                     channel_func=pi_gaze_channels,
+                                     outlet_name='Gaze',
+                                     outlet_format=lsl.cf_double64,
+                                     timestamp_query=pi_extract_from_sample('timestamp_unix_seconds'),
+                                     outlet_uuid=outlet_uuid)
 
 
 class PupilInvisibleEventRelay(PupilInvisibleRelay):
     def __init__(self, outlet_uuid=None):
         PupilInvisibleRelay.__init__(self,
-                                     pi_event_channels,
-                                     'Event',
-                                     'string',
-                                     pi_extract_from_sample('timestamp'),
-                                     outlet_uuid)
+                                     channel_func=pi_event_channels,
+                                     outlet_name='Event',
+                                     outlet_format=lsl.cf_string,
+                                     timestamp_query=pi_extract_from_sample('timestamp_unix_seconds'),
+                                     outlet_uuid=outlet_uuid)
+
+
+class PupilInvisibleTimestampRelay(PupilInvisibleRelay):
+    def __init__(self, outlet_uuid=None):
+        PupilInvisibleRelay.__init__(self,
+                                     channel_func=pi_timestamp_channels,
+                                     outlet_name='Timestamp',
+                                     outlet_format=lsl.cf_float32,
+                                     timestamp_query=pi_extract_from_sample('timestamp_unix_seconds'),
+                                     outlet_uuid=outlet_uuid)
 
 
 def pi_create_outlet(outlet_uuid, channels, outlet_name, outlet_format):
@@ -73,10 +83,22 @@ def pi_streaminfo(outlet_uuid, channels, type_name: str, channel_format):
 def pi_event_channels():
     return [
         PiChannel(
-            query=pi_extract_from_sample('name'),
+            sample_query=pi_extract_from_sample('name'),
             channel_information_dict={
                 'label': "Event",
                 'format': "string"
+            }
+        )
+    ]
+
+
+def pi_timestamp_channels():
+    return [
+        PiChannel(
+            sample_query=pi_extract_from_sample('timestamp_unix_ns'),
+            channel_information_dict={
+                'label': 'Timestamp',
+                'unit': 'nanoseconds'
             }
         )
     ]
@@ -89,7 +111,7 @@ def pi_gaze_channels():
     channels.extend(
         [
             PiChannel(
-                query=pi_extract_screen_query(i),
+                sample_query=pi_extract_screen_query(i),
                 channel_information_dict={
                     'label': "xy"[i],
                     'eye':"both",
@@ -99,22 +121,6 @@ def pi_gaze_channels():
                 }
             )
             for i in range(2)
-        ]
-    )
-
-    # PupilInvisibleTimestamp: original Pupil Invisible UNIX timestamp
-    channels.extend(
-        [
-            PiChannel(
-                query=pi_extract_from_sample('timestamp_unix_seconds'),
-                channel_information_dict={
-                    'label': "pi_timestamp",
-                    'eye': "both",
-                    'metatype': "PupilInvisibleTimestamp",
-                    'unit': "seconds"
-                }
-
-            )
         ]
     )
     return channels
@@ -129,8 +135,8 @@ def pi_extract_from_sample(value):
 
 
 class PiChannel:
-    def __init__(self, query, channel_information_dict):
-        self.query = query
+    def __init__(self, sample_query, channel_information_dict):
+        self.sample_query = sample_query
         self.information_dict = channel_information_dict
 
     def append_to(self, channels):
