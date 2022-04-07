@@ -29,7 +29,7 @@ async def main(time_sync_interval: int = 60, timeout: int = 10):
             'Make sure your device is connected to the same network.', exc_info=True
         )
     assert discoverer.selected_device_info
-    adapter = relay.Relay(discoverer.selected_device_info)
+    adapter = adapters.PI_LSL_Adapter(discoverer.selected_device_info)
     await adapter.relay_receiver_to_publisher(time_sync_interval)
     logger.info('The LSL stream was closed.')
 
