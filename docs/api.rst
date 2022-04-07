@@ -11,18 +11,26 @@ CLI
     :undoc-members:
     :show-inheritance:
 
-Controllers
+Relay
 ===========
 
-.. automodule:: pupil_labs.invisible_lsl_relay.controllers
+.. automodule:: pupil_labs.invisible_lsl_relay.relay
     :members:
     :undoc-members:
     :show-inheritance:
 
-Gaze Relay
+Channels
+===========
+
+.. automodule:: pupil_labs.invisible_lsl_relay.channels
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+Outlets
 ==========
 
-.. automodule:: pupil_labs.invisible_lsl_relay.pi_gaze_relay
+.. automodule:: pupil_labs.invisible_lsl_relay.outlets
     :members:
     :undoc-members:
     :show-inheritance:

@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
    "--timeout",
    default=10,
    help="Time limit in seconds to try to connect to the device")
-async def main(time_sync_interval: int = 60, timeout: int = 10):
+async def main_async(time_sync_interval: int = 60, timeout: int = 10):
     discoverer = DeviceDiscoverer(timeout)
     try:
         await discoverer.get_user_selected_device()
@@ -78,9 +78,9 @@ def evaluate_user_input(user_input, device_list):
         return None
 
 
-if __name__ == "__main__":
+def main_handling_keyboard_interrupt():
     try:
         logging.basicConfig(level=logging.INFO)
-        asyncio.run(main(), debug=True)
+        asyncio.run(main_async(), debug=True)
     except KeyboardInterrupt:
         logger.warning("The relay was closed via keyboard interrupt")
