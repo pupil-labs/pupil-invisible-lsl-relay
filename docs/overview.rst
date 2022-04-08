@@ -73,4 +73,3 @@ be generated.
 #. The offset between the lsl local clock and the time since epoch in seconds is subtracted from the sample timestamp in seconds to find the corresponding lsl time. This corrected timestamp is explicitly pushed to LSL together with the Gaze samples and the Events.
 
 **Caveat**: A misalignment between the time since epoch measured at the companion device and at the time since epoch measured at the device running the Relay might lead to a distortion of the time series.
-
