@@ -1,11 +1,12 @@
-Welcome to |project| documentation!
-===================================
+Welcome to Pupil Invisible LSL Relay documentation!
+===================================================
 
 .. toctree::
-   :maxdepth: 1
+  :maxdepth: 1
 
-   api
-   history
+  overview.rst
+  api.rst
+  history.rst
 
 
 Indices and tables

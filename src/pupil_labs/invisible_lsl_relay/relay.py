@@ -143,11 +143,13 @@ def handle_done_pending_tasks(done, pending):
 
 # send events in intervals
 async def send_events_in_interval(device_info, sec=60):
+    n_events_sent = 0
     while True:
-        await send_timesync_event(device_info)
+        await send_timesync_event(device_info, f'lsl.time_sync_{n_events_sent}')
         await asyncio.sleep(sec)
+        n_events_sent += 1
 
 
-async def send_timesync_event(device_info, message: str = 'lsl.time_sync'):
+async def send_timesync_event(device_info, message: str):
     async with Device.from_discovered_device(device_info) as device:
         await device.send_event(message)
