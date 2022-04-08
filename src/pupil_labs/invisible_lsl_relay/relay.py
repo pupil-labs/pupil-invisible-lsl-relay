@@ -147,7 +147,7 @@ def handle_done_pending_tasks(done, pending):
 async def send_events_in_interval(device_info, sec=60):
     n_events_sent = 0
     while True:
-        await send_timesync_event(device_info, f'lsl.time_sync_{n_events_sent}')
+        await send_timesync_event(device_info, f'lsl.time_sync.{n_events_sent}')
         await asyncio.sleep(sec)
         n_events_sent += 1
 
