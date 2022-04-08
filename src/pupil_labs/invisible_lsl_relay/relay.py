@@ -3,6 +3,7 @@ import logging
 
 from pupil_labs.realtime_api import Device, StatusUpdateNotifier, receive_gaze_data
 from pupil_labs.realtime_api.models import Event, Sensor
+
 from pupil_labs.invisible_lsl_relay import outlets
 
 logger = logging.getLogger(__name__)
@@ -86,8 +87,9 @@ class Relay:
         ]
         # start time sync task
         if time_sync_interval:
-            time_sync_task = asyncio.create_task(send_events_in_interval(
-                self.device_info, time_sync_interval))
+            time_sync_task = asyncio.create_task(
+                send_events_in_interval(self.device_info, time_sync_interval)
+            )
             tasks.append(time_sync_task)
 
         done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)

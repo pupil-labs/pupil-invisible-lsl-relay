@@ -3,9 +3,12 @@ import time
 import uuid
 
 import pylsl as lsl
-from pupil_labs.invisible_lsl_relay.channels import pi_extract_from_sample, \
-    pi_gaze_channels, pi_event_channels
 
+from pupil_labs.invisible_lsl_relay.channels import (
+    pi_event_channels,
+    pi_extract_from_sample,
+    pi_gaze_channels,
+)
 
 VERSION = "1.0"
 
@@ -13,12 +16,14 @@ logger = logging.getLogger(__name__)
 
 
 class PupilInvisibleOutlet:
-    def __init__(self, channel_func, outlet_name, outlet_format, timestamp_query,
-                 outlet_uuid):
+    def __init__(
+        self, channel_func, outlet_name, outlet_format, timestamp_query, outlet_uuid
+    ):
         self._outlet_uuid = outlet_uuid
         self._channels = channel_func()
-        self._outlet = pi_create_outlet(self._outlet_uuid, self._channels, outlet_name,
-                                        outlet_format)
+        self._outlet = pi_create_outlet(
+            self._outlet_uuid, self._channels, outlet_name, outlet_format
+        )
         self._timestamp_query = timestamp_query
 
     def push_sample_to_outlet(self, sample):
@@ -34,29 +39,30 @@ class PupilInvisibleOutlet:
 
 class PupilInvisibleGazeOutlet(PupilInvisibleOutlet):
     def __init__(self, device_id=None):
-        PupilInvisibleOutlet.__init__(self,
-                                      channel_func=pi_gaze_channels,
-                                      outlet_name='Gaze',
-                                      outlet_format=lsl.cf_double64,
-                                      timestamp_query=pi_extract_from_sample(
-                                          'timestamp_unix_seconds'),
-                                      outlet_uuid=f'{device_id or str(uuid.uuid4())}_Gaze')
+        PupilInvisibleOutlet.__init__(
+            self,
+            channel_func=pi_gaze_channels,
+            outlet_name='Gaze',
+            outlet_format=lsl.cf_double64,
+            timestamp_query=pi_extract_from_sample('timestamp_unix_seconds'),
+            outlet_uuid=f'{device_id or str(uuid.uuid4())}_Gaze',
+        )
 
 
 class PupilInvisibleEventOutlet(PupilInvisibleOutlet):
     def __init__(self, device_id=None):
-        PupilInvisibleOutlet.__init__(self,
-                                      channel_func=pi_event_channels,
-                                      outlet_name='Event',
-                                      outlet_format=lsl.cf_string,
-                                      timestamp_query=pi_extract_from_sample(
-                                          'timestamp_unix_seconds'),
-                                      outlet_uuid=f'{device_id or str(uuid.uuid4())}_Event')
+        PupilInvisibleOutlet.__init__(
+            self,
+            channel_func=pi_event_channels,
+            outlet_name='Event',
+            outlet_format=lsl.cf_string,
+            timestamp_query=pi_extract_from_sample('timestamp_unix_seconds'),
+            outlet_uuid=f'{device_id or str(uuid.uuid4())}_Event',
+        )
 
 
 def pi_create_outlet(outlet_uuid, channels, outlet_name, outlet_format):
-    stream_info = pi_streaminfo(outlet_uuid, channels, outlet_name,
-                                outlet_format)
+    stream_info = pi_streaminfo(outlet_uuid, channels, outlet_name, outlet_format)
     return lsl.StreamOutlet(stream_info)
 
 
