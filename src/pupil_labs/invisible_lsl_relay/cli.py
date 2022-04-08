@@ -15,8 +15,10 @@ logger = logging.getLogger(__name__)
 @click.option(
     "--time_sync_interval",
     default=60,
-    help="Interval at which time-sync events are "
-    "sent. Set to 0 to send to never send events.",
+    help=(
+        "Interval in seconds at which time-sync events are sent. "
+        "Set to 0 to never send events."
+    ),
 )
 @click.option(
     "--timeout",
