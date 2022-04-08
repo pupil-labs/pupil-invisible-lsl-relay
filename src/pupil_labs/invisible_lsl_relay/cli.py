@@ -12,14 +12,17 @@ logger = logging.getLogger(__name__)
 
 
 @click.command()
-@click.option("--time_sync_interval",
-              default=60,
-              help="Interval at which time-sync events are "
-                   "sent. Set to 0 to send to never send events.")
 @click.option(
-   "--timeout",
-   default=10,
-   help="Time limit in seconds to try to connect to the device")
+    "--time_sync_interval",
+    default=60,
+    help="Interval at which time-sync events are "
+    "sent. Set to 0 to send to never send events.",
+)
+@click.option(
+    "--timeout",
+    default=10,
+    help="Time limit in seconds to try to connect to the device",
+)
 async def main_async(time_sync_interval: int = 60, timeout: int = 10):
     discoverer = DeviceDiscoverer(timeout)
     try:

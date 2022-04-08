@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+try:
+    from importlib.metadata import version as import_version
+except ImportError:
+    from importlib_metadata import version as import_version
 
 extensions = ['sphinx.ext.autodoc', 'jaraco.packaging.sphinx', 'rst.linker']
 
@@ -36,8 +40,6 @@ intersphinx_mapping = {
 
 html_theme = 'furo'
 autosummary_generate = True
-
-from importlib.metadata import version as import_version
 
 release = import_version('pupil_invisible_lsl_relay')
 # for example take major/minor
