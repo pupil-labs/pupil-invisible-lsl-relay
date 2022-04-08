@@ -50,9 +50,15 @@ class DeviceDiscoverer:
             while self.selected_device_info is None:
                 print("\n======================================")
                 print("Please select a Pupil Invisible device by index:")
-                for device_index, device_name in enumerate(network.devices):
-                    print(f"\t{device_index}\t{device_name}")
+                print("\tIndex\tAddress" + (" " * 14) + "\tName")
+                for device_index, device_info in enumerate(network.devices):
+                    ip = device_info.addresses[0]
+                    port = device_info.port
+                    full_name = device_info.name
+                    name = full_name.split(":")[1]
+                    print(f"\t{device_index}\t{ip}:{port}\t{name}")
 
+                print()
                 print("To reload the list, hit enter. ")
                 print("To abort device selection, use 'ctrl+c' and hit 'enter'")
                 user_input = await input_async()
