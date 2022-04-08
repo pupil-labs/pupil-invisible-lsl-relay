@@ -2,6 +2,7 @@
 
 .. _changes:
 
+*******
 History
 *******
 
