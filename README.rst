@@ -6,8 +6,8 @@
 
 .. _PyPI link: https://pypi.org/project/pupil-invisible-lsl-relay
 
-.. image:: https://github.com/papr/realtime-api/workflows/tests/badge.svg
-   :target: https://github.com/papr/realtime-api/actions?query=workflow%3A%22tests%22
+.. image:: https://github.com/pupil-labs/pupil-invisible-lsl-relay/workflows/tests/badge.svg
+   :target: https://github.com/pupil-labs/pupil-invisible-lsl-relay/actions?query=workflow%3A%22tests%22
    :alt: tests
 
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
