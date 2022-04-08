@@ -1,0 +1,8 @@
+name: pupil-invisible-lsl-relay-conda
+channels:
+  - conda-forge
+dependencies:
+  - liblsl
+  - pip
+  - pip:
+    - -e ".[docs,testing]"

@@ -1,87 +1,99 @@
+import asyncio
+import concurrent.futures
 import logging
 
-import click
+# async version of click, requires anyio
+import asyncclick as click
+from pupil_labs.realtime_api.discovery import Network
 
-from .controllers import ConnectionController, InteractionController
-from .pi_gaze_relay import PupilInvisibleGazeRelay
+from pupil_labs.invisible_lsl_relay import relay
 
 logger = logging.getLogger(__name__)
 
 
 @click.command()
-@click.option("--host-name", default=None, help="Device (host) name to connect")
 @click.option(
-    "--timeout",
-    default=5.0,
+    "--time_sync_interval",
+    default=60,
     help=(
-        "Time limit in seconds to try to connect to the device (only works with "
-        "--host-name argument)"
+        "Interval in seconds at which time-sync events are sent. "
+        "Set to 0 to never send events."
     ),
 )
-def main(host_name: str, timeout: float):
-
-    if host_name is None:
-        toggle_logging(enable=False)
-        host_name = interactive_mode_get_host_name()
-        # Since the user picked a device from the discovered list, ignore the timeout
-        timeout = None
-
-    if host_name is None:
-        exit(0)
-
-    toggle_logging(enable=True)
-
-    gaze_relay = PupilInvisibleGazeRelay()
-
-    for gaze in gaze_data_stream(host_name, connection_timeout=timeout):
-        gaze_relay.push_gaze_sample(gaze)
-
-
-def interactive_mode_get_host_name():
-    interaction = InteractionController()
+@click.option(
+    "--timeout",
+    default=10,
+    help="Time limit in seconds to try to connect to the device",
+)
+async def main_async(time_sync_interval: int = 60, timeout: int = 10):
+    discoverer = DeviceDiscoverer(timeout)
     try:
-        while True:
-            host_name = interaction.get_user_selected_host_name()
-            if host_name is not None:
-                return host_name
-    except KeyboardInterrupt:
+        await discoverer.get_user_selected_device()
+    except TimeoutError:
+        logger.error(
+            'Make sure your device is connected to the same network.', exc_info=True
+        )
+    assert discoverer.selected_device_info
+    adapter = relay.Relay(discoverer.selected_device_info)
+    await adapter.relay_receiver_to_publisher(time_sync_interval)
+    logger.info('The LSL stream was closed.')
+
+
+class DeviceDiscoverer:
+    def __init__(self, search_timeout):
+        self.selected_device_info = None
+        self.search_timeout = search_timeout
+
+    async def get_user_selected_device(self):
+        async with Network() as network:
+            print("Looking for devices in your network...\n\t", end="")
+            await network.wait_for_new_device(timeout_seconds=self.search_timeout)
+
+            while self.selected_device_info is None:
+                print("\n======================================")
+                print("Please select a Pupil Invisible device by index:")
+                print("\tIndex\tAddress" + (" " * 14) + "\tName")
+                for device_index, device_info in enumerate(network.devices):
+                    ip = device_info.addresses[0]
+                    port = device_info.port
+                    full_name = device_info.name
+                    name = full_name.split(":")[1]
+                    print(f"\t{device_index}\t{ip}:{port}\t{name}")
+
+                print()
+                print("To reload the list, hit enter. ")
+                print("To abort device selection, use 'ctrl+c' and hit 'enter'")
+                user_input = await input_async()
+                self.selected_device_info = evaluate_user_input(
+                    user_input, network.devices
+                )
+
+
+async def input_async():
+    # based on https://gist.github.com/delivrance/675a4295ce7dc70f0ce0b164fcdbd798?
+    # permalink_comment_id=3590322#gistcomment-3590322
+    with concurrent.futures.ThreadPoolExecutor(1, 'AsyncInput') as executor:
+        user_input = await asyncio.get_event_loop().run_in_executor(
+            executor, input, '>>> '
+        )
+        return user_input.strip()
+
+
+def evaluate_user_input(user_input, device_list):
+    try:
+        device_info = device_list[int(user_input)]
+        return device_info
+    except ValueError:
+        logger.debug("Reloading the device list.")
         return None
-    finally:
-        interaction.cleanup()
+    except IndexError:
+        print('Please choose an index from the list!')
+        return None
 
 
-def gaze_data_stream(host_name, connection_timeout):
-    connection = ConnectionController(host_name=host_name, timeout=connection_timeout)
+def main_handling_keyboard_interrupt():
     try:
-        while True:
-            connection.poll_events()
-            yield from connection.fetch_gaze()
+        logging.basicConfig(level=logging.INFO)
+        asyncio.run(main_async(), debug=True)
     except KeyboardInterrupt:
-        pass
-    except ConnectionController.Timeout:
-        print(f"===============================================")
-        print(f'Failed to discover device named "{host_name}"')
-        print(f"Discovered devices:")
-        for host_name in connection.discovered_hosts:
-            print(f"\t{host_name}")
-        print(f"===============================================")
-    finally:
-        connection.cleanup()
-
-
-def toggle_logging(enable: bool):
-    handlers = []
-    if enable:
-        handlers.append(logging.StreamHandler())
-    logging.basicConfig(
-        level=logging.DEBUG,
-        handlers=handlers,
-        style="{",
-        format="{asctime} [{levelname}] {message}",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
-    logging.getLogger("pyre").setLevel(logging.WARNING)
-
-
-if __name__ == "__main__":
-    main()
+        logger.warning("The relay was closed via keyboard interrupt")
