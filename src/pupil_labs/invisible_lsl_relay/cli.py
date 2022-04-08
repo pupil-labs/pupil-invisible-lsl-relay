@@ -53,7 +53,8 @@ class DeviceDiscoverer:
                 for device_index, device_name in enumerate(network.devices):
                     print(f"\t{device_index}\t{device_name}")
 
-                print("To reload the list, hit enter.")
+                print("To reload the list, hit enter. ")
+                print("To abort device selection, use 'ctrl+c' and hit 'enter'")
                 user_input = await input_async()
                 self.selected_device_info = evaluate_user_input(
                     user_input, network.devices
