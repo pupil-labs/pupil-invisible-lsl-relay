@@ -8,6 +8,9 @@ Pupil Invisible device to the `labstreaminglayer <https://github.com/sccn/labstr
 Install and Usage
 ==================
 
+Make sure the version of your Pupil Invisible Companion App is at least v1.4.14 or higher. You can download
+the latest version of the App in the Play Store on your Pupil Invisible Companion device.
+
 Install the Pupil Invisible Relay with pip::
 
    pip install pupil-invisible-lsl-relay

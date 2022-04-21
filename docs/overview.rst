@@ -4,13 +4,26 @@
 Conceptual Overview
 *******************
 
-The Relay is built on top of the `Pupil Invisible Realtime API <https://docs.pupil-labs.com/invisible/how-tos/integrate-with-the-real-time-api/introduction/>`_. It creates LSL outlets for
-each data stream, reads data samples from the realtime API, adapts them to an LSL-readable
+The Relay is built on top of the `Pupil Invisible Realtime API <https://docs.pupil-labs.com/invisible/how-tos/integrate-with-the-real-time-api/introduction/>`_.
+It searches and displays Pupil Invisible instances in the network. Once the user selected one of them, it creates
+LSL outlets for each data stream, reads data samples from the connected device, adapts them to an LSL-readable
 format, and pushes the data samples into their respective outlets.
 
 The Relay pushes data samples with explicit timestamps. Timestamps are taken at the invisible
 companion device, and corrected by the offset between the lsl clock and the current time. We
-provide a detailed overview of timestamps and potential caveats in the `Timestamps`_ section
+provide a detailed overview of timestamps and potential caveats in the `Timestamps`_ section.
+
+Device Selection
+================
+After starting the lsl relay via the command line, the relay searches for Pupil Invisible instances in the network.
+Available instances will be displayed in a list, with the IP address and name of the Companion device. Select
+the instance you want to connect with via the displayed index.
+
+**Troubleshooting:**
+If your Pupil Invisible device does not appear in the device selection, please check if both the PC running the relay
+and the Companion device are connected to the same network. Also, make sure that your Invisible Companion app is at
+at least version v1.4.14 or higher.
+
 
 LSL Outlets
 ===========
