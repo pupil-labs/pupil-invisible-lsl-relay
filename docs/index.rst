@@ -36,6 +36,7 @@ The Relay takes two optional arguments:
    :glob:
 
    overview.rst
+   time_alignment.rst
    api.rst
    history.rst
 
