@@ -1,6 +1,6 @@
-import pyxdf
 import numpy as np
 import pandas as pd
+import pyxdf
 from sklearn import linear_model
 
 # import xdf and cloud data
@@ -28,12 +28,13 @@ cloud_event_timestamps = cloud_events['timestamps [ns]']
 name_intersection = np.intersect1d(cloud_event_names, lsl_event_names)
 
 # filter timestamps by the event intersection
-filtered_cloud_event_times = np.array(cloud_event_timestamps)[np.where(
-    cloud_event_names.isin(name_intersection))]
+filtered_cloud_event_times = np.array(cloud_event_timestamps)[
+    np.where(cloud_event_names.isin(name_intersection))
+]
 
-filtered_lsl_event_times = np.array(lsl_event_times)[np.where(
-    np.isin(np.array(lsl_event_names).flatten(), name_intersection)
-)]
+filtered_lsl_event_times = np.array(lsl_event_times)[
+    np.where(np.isin(np.array(lsl_event_names).flatten(), name_intersection))
+]
 
 # transform cloud timestamps to seconds
 filtered_cloud_event_times = filtered_cloud_event_times * 1e-9
@@ -50,5 +51,5 @@ cloud_gaze['timestamp [s]'] = cloud_gaze['timestamp [ns]'] * 1e-9
 
 # predict lsl time in seconds
 cloud_gaze['lsl_time [s]'] = time_mapper.predict(
-    cloud_gaze['timestamp [s]'].values.reshape(-1, 1))
-
+    cloud_gaze['timestamp [s]'].values.reshape(-1, 1)
+)
