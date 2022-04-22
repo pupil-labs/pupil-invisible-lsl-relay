@@ -82,4 +82,3 @@ Once the linear model was fitted, we can apply is to map the cloud timestamps to
 .. literalinclude:: ../examples/apply_time_correction.py
   :language: python
   :linenos:
-

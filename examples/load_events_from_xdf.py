@@ -1,5 +1,5 @@
-import pyxdf
 import numpy as np
+import pyxdf
 
 # define the name of the stream of interest
 stream_name = 'pupil_invisible_Event'
