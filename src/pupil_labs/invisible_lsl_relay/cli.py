@@ -43,6 +43,7 @@ class DeviceDiscoverer:
     def __init__(self, search_timeout):
         self.selected_device_info = None
         self.search_timeout = search_timeout
+        self.n_reload = 0
 
     async def get_user_selected_device(self):
         async with Network() as network:
@@ -63,6 +64,13 @@ class DeviceDiscoverer:
                 print()
                 print("To reload the list, hit enter. ")
                 print("To abort device selection, use 'ctrl+c' and hit 'enter'")
+                if self.n_reload >= 5:
+                    print(
+                        "Can't find the device you're looking for?\n"
+                        "Make sure the Companion App is connected to the same "
+                        "network and at least version v1.4.14."
+                    )
+                self.n_reload += 1
                 user_input = await input_async()
                 self.selected_device_info = evaluate_user_input(
                     user_input, network.devices
