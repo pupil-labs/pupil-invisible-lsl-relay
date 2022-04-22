@@ -66,9 +66,9 @@ class DeviceDiscoverer:
                 print("To abort device selection, use 'ctrl+c' and hit 'enter'")
                 if self.n_reload >= 5:
                     print(
-                        "Can't find the device you're looking for? \n"
+                        "Can't find the device you're looking for?\n"
                         "Make sure the Companion App is connected to the same "
-                        "network and at least version v1.4.14. "
+                        "network and at least version v1.4.14."
                     )
                 self.n_reload += 1
                 user_input = await input_async()
