@@ -63,8 +63,9 @@ We can load this csv file with pandas.
 Building a linear model to map cloud time to lsl time
 ======================================================
 After extracting the event names and time stamps from both series as shown above,
-you can build a linear model to translate from one time series to the other. This code
-assumes that you named the data structures exactly as above.
+you can build a linear model to translate from one time series to the other.
+
+Once the linear model was fitted, we can apply it to map the cloud timestamps to lsl timestamps.
 
 .. hint::
    If you want to invert the mapping, to transform lsl timestamps to cloud timestamps,
@@ -75,11 +76,4 @@ assumes that you named the data structures exactly as above.
   :language: python
   :linenos:
 
-Applying the linear model to cloud time
-=======================================
-Once the linear model was fitted, we can apply is to map the cloud timestamps to lsl timestamps.
-
-.. literalinclude:: ../examples/apply_time_correction.py
-  :language: python
-  :linenos:
 
