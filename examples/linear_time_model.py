@@ -50,6 +50,4 @@ cloud_gaze = pd.read_csv('cloud_recordings/gaze.csv')
 cloud_gaze['timestamp [s]'] = cloud_gaze['timestamp [ns]'] * 1e-9
 
 # predict lsl time in seconds
-cloud_gaze['lsl_time [s]'] = time_mapper.predict(
-    cloud_gaze[['timestamp [s]']]
-)
+cloud_gaze['lsl_time [s]'] = time_mapper.predict(cloud_gaze[['timestamp [s]']])
