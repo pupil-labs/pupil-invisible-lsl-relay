@@ -25,9 +25,9 @@ Setup
 
 #. Stop the lsl recording.
 
-#. Wait till the Gaze Data was uploaded to Pupil Cloud and the 200 Hz Gaze-Data was computed.
+#. Wait till the gaze data was uploaded to Pupil Cloud and the 200 Hz gaze data was computed.
 
-#. Export the Gaze Data with the Raw Data Exporter Enrichment.
+#. Export the gaze data from Pupil Cloud by right-clicking on the recording and selecting Downloads -> Download Recording.
 
 #. You will end up with an xdf file, containing all data recorded through lsl (including gaze and event data),
    and one csv file for each gaze and event data downloaded from Pupil Cloud.
@@ -43,12 +43,19 @@ From here, you can perform the timestamp alignment.
    You can change the frequency at which ``lsl.timesync`` events are being sent by setting the ``--time_sync_interval``
    argument.
 
+To run the pipeline below, you can install the necessary dependencies needed via
+
+.. code-block::
+
+   pip install pupil-invisible-lsl-relay[pupil_cloud_alignment]
+
 Loading event data from xdf file
 =================================
-Event streams can be identified and filtered by their name.
+Event streams can be identified and selected by their name.
 
-.. literalinclude:: ../examples/load_events_from_xdf.py
+.. literalinclude:: ../examples/linear_time_model.py
    :language: python
+   :lines: 1-18
    :linenos:
 
 Loading event data from cloud
@@ -56,8 +63,9 @@ Loading event data from cloud
 The raw data enrichment contains a csv file with event names and timestamps.
 We can load this csv file with pandas.
 
-.. literalinclude:: ../examples/load_events_from_csv.py
+.. literalinclude:: ../examples/linear_time_model.py
    :language: python
+   :lines: 20-28
    :linenos:
 
 Building a linear model to map cloud time to lsl time
@@ -70,8 +78,9 @@ Once the linear model was fitted, we can apply it to map the cloud timestamps to
 .. hint::
    If you want to invert the mapping, to transform lsl timestamps to cloud timestamps,
    you'll have to change the order of arguments in ``time_mapper.fit`` to
-   ``time_mapper.fit(filtered_lsl_event_times, filtered_cloud_event_times.reshape(-1, 1))``
+   ``time_mapper.fit(filtered_lsl_event_times.reshape(-1, 1), filtered_cloud_event_times)``
 
 .. literalinclude:: ../examples/linear_time_model.py
   :language: python
+  :lines: 30-
   :linenos:
