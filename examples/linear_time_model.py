@@ -1,8 +1,8 @@
 # imports for the full pipeline
 import numpy as np
-from sklearn import linear_model
 import pandas as pd
 import pyxdf
+from sklearn import linear_model
 
 # import xdf data
 # define the name of the stream of interest
