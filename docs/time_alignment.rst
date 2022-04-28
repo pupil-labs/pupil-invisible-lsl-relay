@@ -55,7 +55,7 @@ Event streams can be identified and selected by their name.
 
 .. literalinclude:: ../examples/linear_time_model.py
    :language: python
-   :lines: 1-18
+   :lines: 1-20
    :linenos:
 
 Loading event data from cloud
@@ -65,7 +65,7 @@ We can load this csv file with pandas.
 
 .. literalinclude:: ../examples/linear_time_model.py
    :language: python
-   :lines: 20-28
+   :lines: 23-31
    :linenos:
 
 Building a linear model to map cloud time to lsl time
@@ -82,5 +82,5 @@ Once the linear model was fitted, we can apply it to map the cloud timestamps to
 
 .. literalinclude:: ../examples/linear_time_model.py
   :language: python
-  :lines: 30-
+  :lines: 33-
   :linenos:

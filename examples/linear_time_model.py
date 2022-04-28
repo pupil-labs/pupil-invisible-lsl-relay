@@ -1,4 +1,7 @@
+# imports for the full pipeline
 import numpy as np
+from sklearn import linear_model
+import pandas as pd
 import pyxdf
 
 # import xdf data
@@ -16,8 +19,6 @@ event_stream = data[0]
 lsl_event_names = np.array(event_stream['time_series']).flatten()
 lsl_event_times = np.array(event_stream['time_stamps']).flatten()
 
-import pandas as pd
-
 # import cloud data
 path_to_cloud_events = './cloud_recordings/events.csv'
 cloud_events = pd.read_csv(path_to_cloud_events)
@@ -25,13 +26,6 @@ cloud_events = pd.read_csv(path_to_cloud_events)
 # extract and reformat the cloud data to numpy arrays
 cloud_event_names = cloud_events['name'].values
 cloud_event_timestamps = cloud_events['timestamp [ns]'].values
-
-from sklearn import linear_model
-
-# include the lines below when running this code
-# without the xdf and cloud imports above.
-# import numpy as np
-# import pandas as pd
 
 # filter events that were recorded in the lsl stream and in cloud
 name_intersection = np.intersect1d(cloud_event_names, lsl_event_names)
