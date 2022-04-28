@@ -32,7 +32,7 @@ Setup
 #. You will end up with an xdf file, containing all data recorded through lsl (including gaze and event data),
    and one csv file for each gaze and event data downloaded from Pupil Cloud.
 
-From here, you can perform the timestamp alignments
+From here, you can perform the timestamp alignment.
 
 .. important::
    If your recording is short (less than 1 minute), you should increase the frequency at which ``lsl.timesync`` events
