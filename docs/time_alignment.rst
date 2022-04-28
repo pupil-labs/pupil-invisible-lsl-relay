@@ -4,7 +4,7 @@
 Aligning LSL Relay timestamps to Pupil Cloud timestamps
 *******************************************************
 
-The LSL stream will contain gaze data a resolution of 66 Hz.
+The LSL stream will contain gaze data with a resolution of ~66 Hz.
 You can get a higher sampling rate when you're using the gaze data downloaded from
 Pupil Cloud. In order to do this, you'll need to align the timestamps collected during
 the lsl streaming to the timestamps recorded in cloud.
