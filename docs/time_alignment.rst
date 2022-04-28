@@ -49,13 +49,22 @@ To run the pipeline below, you can install the necessary dependencies needed via
 
    pip install pupil-invisible-lsl-relay[pupil_cloud_alignment]
 
+Import dependencies
+===================
+Import the installed dependencies before running the example code below.
+
+.. literalinclude:: ../examples/linear_time_model.py
+   :language: python
+   :lines: 1-5
+   :linenos:
+
 Loading event data from xdf file
 =================================
 Event streams can be identified and selected by their name.
 
 .. literalinclude:: ../examples/linear_time_model.py
    :language: python
-   :lines: 1-20
+   :lines: 7-20
    :linenos:
 
 Loading event data from cloud
