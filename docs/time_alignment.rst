@@ -29,7 +29,7 @@ Setup
 
 #. Export the Gaze Data with the Raw Data Exporter Enrichment.
 
-#. You will end up with a n xdf file, containing all data recorded through lsl (including gaze and event data),
+#. You will end up with an xdf file, containing all data recorded through lsl (including gaze and event data),
    and one csv file for each gaze and event data downloaded from Pupil Cloud.
 
 From here, you can perform the timestamp alignments
