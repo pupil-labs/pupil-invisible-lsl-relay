@@ -32,11 +32,10 @@ The Relay takes two optional arguments:
 .. _NTP: https://en.wikipedia.org/wiki/Network_Time_Protocol
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :glob:
 
-   overview.rst
-   time_alignment.rst
+   guides/index.rst
    api.rst
    history.rst
 

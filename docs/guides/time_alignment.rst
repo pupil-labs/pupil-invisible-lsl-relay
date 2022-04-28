@@ -1,8 +1,8 @@
 :tocdepth: 3
 
-*******************************************************
-Aligning LSL Relay timestamps to Pupil Cloud timestamps
-*******************************************************
+**************************
+Using gaze data from Cloud
+**************************
 
 The LSL stream will contain gaze data with a resolution of ~66 Hz.
 You can get a higher sampling rate when you're using the gaze data downloaded from
@@ -53,7 +53,7 @@ Import dependencies
 ===================
 Import the installed dependencies before running the example code below.
 
-.. literalinclude:: ../examples/linear_time_model.py
+.. literalinclude:: ../../examples/linear_time_model.py
    :language: python
    :lines: 1-5
    :linenos:
@@ -62,7 +62,7 @@ Loading event data from xdf file
 =================================
 Event streams can be identified and selected by their name.
 
-.. literalinclude:: ../examples/linear_time_model.py
+.. literalinclude:: ../../examples/linear_time_model.py
    :language: python
    :lines: 7-22
    :linenos:
@@ -72,7 +72,7 @@ Loading event data from cloud
 The raw data enrichment contains a csv file with event names and timestamps.
 We can load this csv file with pandas.
 
-.. literalinclude:: ../examples/linear_time_model.py
+.. literalinclude:: ../../examples/linear_time_model.py
    :language: python
    :lines: 24-29
    :linenos:
@@ -89,7 +89,7 @@ Once the linear model was fitted, we can apply it to map the cloud timestamps to
    you'll have to change the order of arguments in ``time_mapper.fit`` to
    ``time_mapper.fit(filtered_lsl_event_data[['time_stamps']], filtered_cloud_event_data[['timestamp [s]']])``
 
-.. literalinclude:: ../examples/linear_time_model.py
+.. literalinclude:: ../../examples/linear_time_model.py
   :language: python
   :lines: 36-
   :linenos:
