@@ -23,6 +23,8 @@ The Relay takes two optional arguments:
 - ``--timeout`` is used to define the maximum time (in seconds) the relay will search the network for new
   devices before returning. The default is 10 seconds.
 
+- ``--log_file_name`` defines the name and path of the log file. The default is ``pi_lsl_relay.log``.
+
 .. caution::
    The Relay currently relies on `NTP`_ for time synchronization between the phone and
    the computer running the relay application. See the :ref:`timestamp_docs` section for
