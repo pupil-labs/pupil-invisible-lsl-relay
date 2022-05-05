@@ -49,7 +49,7 @@ filtered_lsl_event_data = lsl_event_data[
 time_mapper = linear_model.LinearRegression()
 time_mapper.fit(
     filtered_cloud_event_data[[event_column_timestamp]],
-    filtered_lsl_event_data[event_column_timestamp]
+    filtered_lsl_event_data[event_column_timestamp],
 )
 
 # use convert gaze time stamps from cloud to lsl time
