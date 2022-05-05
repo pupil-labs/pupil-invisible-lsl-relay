@@ -5,10 +5,17 @@ import logging
 # async version of click, requires anyio
 import asyncclick as click
 from pupil_labs.realtime_api.discovery import Network
-
 from pupil_labs.invisible_lsl_relay import relay
 
 logger = logging.getLogger(__name__)
+
+formatter = logging.Formatter('%(levelname)s:%(name)s:%(message)s')
+
+stream_handler = logging.StreamHandler()
+stream_handler.setLevel(logging.INFO)
+stream_handler.setFormatter(formatter)
+
+logger.addHandler(stream_handler)
 
 
 @click.command()
@@ -101,7 +108,11 @@ def evaluate_user_input(user_input, device_list):
 
 def main_handling_keyboard_interrupt():
     try:
-        logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format='%(asctime)s:%(name)s:%(levelname)s:%(message)s',
+            filename='pi_lsl_relay.log'
+        )
         asyncio.run(main_async(), debug=True)
     except KeyboardInterrupt:
-        logger.warning("The relay was closed via keyboard interrupt")
+        logger.info("The relay was closed via keyboard interrupt")
