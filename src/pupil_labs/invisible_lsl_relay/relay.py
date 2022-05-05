@@ -7,14 +7,6 @@ from pupil_labs.realtime_api.models import Event, Sensor
 from pupil_labs.invisible_lsl_relay import outlets
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-formatter = logging.Formatter('%(levelname)s:%(name)s:%(message)s')
-stream_handler = logging.StreamHandler()
-stream_handler.setLevel(logging.INFO)
-stream_handler.setFormatter(formatter)
-
-logger.addHandler(stream_handler)
 
 
 class Relay:
