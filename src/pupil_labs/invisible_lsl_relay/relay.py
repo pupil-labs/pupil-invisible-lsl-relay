@@ -150,6 +150,7 @@ async def send_events_in_interval(device_info, sec=60):
         await send_timesync_event(device_info, f'lsl.time_sync.{n_events_sent}')
         await asyncio.sleep(sec)
         n_events_sent += 1
+        logger.debug(f'sent time synchronization event no {n_events_sent}')
 
 
 async def send_timesync_event(device_info, message: str):
