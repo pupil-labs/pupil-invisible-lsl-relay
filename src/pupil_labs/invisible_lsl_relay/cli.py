@@ -5,6 +5,7 @@ import logging
 # async version of click, requires anyio
 import asyncclick as click
 from pupil_labs.realtime_api.discovery import Network
+
 from pupil_labs.invisible_lsl_relay import relay
 
 logger = logging.getLogger(__name__)
@@ -111,7 +112,7 @@ def main_handling_keyboard_interrupt():
         logging.basicConfig(
             level=logging.DEBUG,
             format='%(asctime)s:%(name)s:%(levelname)s:%(message)s',
-            filename='pi_lsl_relay.log'
+            filename='pi_lsl_relay.log',
         )
         asyncio.run(main_async(), debug=True)
     except KeyboardInterrupt:

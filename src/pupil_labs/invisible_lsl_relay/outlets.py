@@ -21,6 +21,7 @@ stream_handler.setFormatter(formatter)
 
 logger.addHandler(stream_handler)
 
+
 class PupilInvisibleOutlet:
     def __init__(
         self, channel_func, outlet_name, outlet_format, timestamp_query, outlet_uuid
