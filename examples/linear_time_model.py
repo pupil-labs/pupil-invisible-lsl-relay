@@ -17,9 +17,12 @@ data, header = pyxdf.load_xdf(path_to_recording, select_streams=[{'name': stream
 event_stream = data[0]
 
 # extract event names and lsl time stamps into a pandas data frames
-lsl_event_data = pd.DataFrame(columns=['time_series', 'time_stamps'])
-lsl_event_data['time_series'] = [name[0] for name in event_stream['time_series']]
-lsl_event_data['time_stamps'] = pd.DataFrame(event_stream['time_stamps'])
+event_column_name = 'name'
+event_column_timestamp = 'timestamp [s]'
+
+lsl_event_data = pd.DataFrame(columns=[event_column_name, event_column_timestamp])
+lsl_event_data[event_column_name] = [name[0] for name in event_stream['time_series']]
+lsl_event_data[event_column_timestamp] = event_stream['time_stamps']
 
 # import cloud data
 path_to_cloud_events = './cloud_recordings/events.csv'
