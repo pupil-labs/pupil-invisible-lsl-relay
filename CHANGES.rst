@@ -1,0 +1,18 @@
+2.0.1
+#####
+- Document minimum Pupil Invisible Companion version required (v1.4.14)
+- Add code example demonstrating post-hoc time sync between a Pupil Cloud download and
+  a LSL recording
+- Write debug logs to log file (path defined via ``--log_file_name`` parameter)
+
+  - Requires `click <https://pypi.org/project/click/>`_ instead of `asyncclick
+    <https://pypi.org/project/asyncclick/>`_
+
+2.0.0
+#####
+- First release supporting the `Pupil Labs Network API <https://github.com/pupil-labs/realtime-network-api>`_
+- The legacy NDSI-based relay application can be found
+  `here <https://github.com/labstreaminglayer/App-PupilLabs/tree/legacy-pi-lsl-relay/pupil_invisible_lsl_relay>`_
+
+- Pull project skeleton from `<https://github.com/pupil-labs/python-module-skeleton>`_
+- Initial fork from `<https://github.com/labstreaminglayer/App-PupilLabs>`_
