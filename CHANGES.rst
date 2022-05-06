@@ -1,3 +1,8 @@
+2.0.2
+#####
+- Fix default duration of network search (10 seconds)
+- Fix default interval for time synchronization events (60 seconds)
+
 2.0.1
 #####
 - Document minimum Pupil Invisible Companion version required (v1.4.14)
