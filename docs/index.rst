@@ -7,7 +7,6 @@ Pupil Invisible device to the `labstreaminglayer <https://github.com/sccn/labstr
 
 Install and Usage
 ==================
-
 Install the Pupil Invisible Relay with pip::
 
    pip install pupil-invisible-lsl-relay
@@ -24,18 +23,25 @@ The Relay takes two optional arguments:
 - ``--timeout`` is used to define the maximum time (in seconds) the relay will search the network for new
   devices before returning. The default is 10 seconds.
 
+- ``--log_file_name`` defines the name and path of the log file. The default is ``pi_lsl_relay.log``.
+
 .. caution::
    The Relay currently relies on `NTP`_ for time synchronization between the phone and
    the computer running the relay application. See the :ref:`timestamp_docs` section for
    details.
 
+.. important::
+   Make sure the version of your Pupil Invisible Companion App is at least v1.4.14 or higher.
+   You can download the latest version of the App in the Play Store on your Pupil Invisible Companion device.
+
+
 .. _NTP: https://en.wikipedia.org/wiki/Network_Time_Protocol
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :glob:
 
-   overview.rst
+   guides/index.rst
    api.rst
    history.rst
 

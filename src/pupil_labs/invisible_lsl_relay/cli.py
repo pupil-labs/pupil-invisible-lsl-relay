@@ -2,8 +2,7 @@ import asyncio
 import concurrent.futures
 import logging
 
-# async version of click, requires anyio
-import asyncclick as click
+import click
 from pupil_labs.realtime_api.discovery import Network
 
 from pupil_labs.invisible_lsl_relay import relay
@@ -11,20 +10,6 @@ from pupil_labs.invisible_lsl_relay import relay
 logger = logging.getLogger(__name__)
 
 
-@click.command()
-@click.option(
-    "--time_sync_interval",
-    default=60,
-    help=(
-        "Interval in seconds at which time-sync events are sent. "
-        "Set to 0 to never send events."
-    ),
-)
-@click.option(
-    "--timeout",
-    default=10,
-    help="Time limit in seconds to try to connect to the device",
-)
 async def main_async(time_sync_interval: int = 60, timeout: int = 10):
     discoverer = DeviceDiscoverer(timeout)
     try:
@@ -43,6 +28,7 @@ class DeviceDiscoverer:
     def __init__(self, search_timeout):
         self.selected_device_info = None
         self.search_timeout = search_timeout
+        self.n_reload = 0
 
     async def get_user_selected_device(self):
         async with Network() as network:
@@ -63,6 +49,13 @@ class DeviceDiscoverer:
                 print()
                 print("To reload the list, hit enter. ")
                 print("To abort device selection, use 'ctrl+c' and hit 'enter'")
+                if self.n_reload >= 5:
+                    print(
+                        "Can't find the device you're looking for?\n"
+                        "Make sure the Companion App is connected to the same "
+                        "network and at least version v1.4.14."
+                    )
+                self.n_reload += 1
                 user_input = await input_async()
                 self.selected_device_info = evaluate_user_input(
                     user_input, network.devices
@@ -91,9 +84,45 @@ def evaluate_user_input(user_input, device_list):
         return None
 
 
-def main_handling_keyboard_interrupt():
+@click.command()
+@click.option(
+    "--time_sync_interval",
+    default=10,
+    help=(
+        "Interval in seconds at which time-sync events are sent. "
+        "Set to 0 to never send events."
+    ),
+)
+@click.option(
+    "--timeout",
+    default=60,
+    help="Time limit in seconds to try to connect to the device",
+)
+@click.option(
+    "--log_file_name",
+    default="pi_lsl_relay.log",
+    help="Name and path where the log file is saved.",
+)
+def relay_setup_and_start(log_file_name: str, timeout: int, time_sync_interval: int):
     try:
-        logging.basicConfig(level=logging.INFO)
-        asyncio.run(main_async(), debug=True)
+        logging.basicConfig(
+            level=logging.DEBUG,
+            filename=log_file_name,
+            format='%(asctime)s:%(name)s:%(levelname)s:%(message)s',
+        )
+        # set up console logging
+        stream_handler = logging.StreamHandler()
+        stream_handler.setLevel(logging.INFO)
+        formatter = logging.Formatter('%(name)s | %(levelname)s | %(message)s')
+        stream_handler.setFormatter(formatter)
+
+        logging.getLogger().addHandler(stream_handler)
+
+        asyncio.run(
+            main_async(time_sync_interval=time_sync_interval, timeout=timeout),
+            debug=False,
+        )
     except KeyboardInterrupt:
-        logger.warning("The relay was closed via keyboard interrupt")
+        logger.info("The relay was closed via keyboard interrupt")
+    finally:
+        logging.shutdown()

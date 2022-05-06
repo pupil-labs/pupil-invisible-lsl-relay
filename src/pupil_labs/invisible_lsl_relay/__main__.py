@@ -1,4 +1,4 @@
-from .cli import main_handling_keyboard_interrupt
+from .cli import relay_setup_and_start
 
 if __name__ == "__main__":
-    main_handling_keyboard_interrupt()
+    relay_setup_and_start()
