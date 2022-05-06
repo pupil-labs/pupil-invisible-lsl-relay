@@ -1,7 +1,7 @@
 2.0.2
 #####
-- Fix default duration of network search
-- Fix default interval for time synchronization events
+- Fix default duration of network search (10 seconds)
+- Fix default interval for time synchronization events (60 seconds)
 
 
 2.0.1
