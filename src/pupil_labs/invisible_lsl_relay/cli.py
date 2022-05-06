@@ -87,7 +87,7 @@ def evaluate_user_input(user_input, device_list):
 @click.command()
 @click.option(
     "--time_sync_interval",
-    default=10,
+    default=60,
     help=(
         "Interval in seconds at which time-sync events are sent. "
         "Set to 0 to never send events."
@@ -95,7 +95,7 @@ def evaluate_user_input(user_input, device_list):
 )
 @click.option(
     "--timeout",
-    default=60,
+    default=10,
     help="Time limit in seconds to try to connect to the device",
 )
 @click.option(
