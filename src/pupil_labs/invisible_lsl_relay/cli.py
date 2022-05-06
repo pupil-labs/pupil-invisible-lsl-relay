@@ -118,7 +118,10 @@ def relay_setup_and_start(log_file_name: str, timeout: int, time_sync_interval: 
 
         logging.getLogger().addHandler(stream_handler)
 
-        asyncio.run(main_async(timeout, time_sync_interval), debug=True)
+        asyncio.run(
+            main_async(time_sync_interval=time_sync_interval, timeout=timeout),
+            debug=False,
+        )
     except KeyboardInterrupt:
         logger.info("The relay was closed via keyboard interrupt")
     finally:

@@ -64,7 +64,7 @@ Event streams can be identified and selected by their name.
 
 .. literalinclude:: ../../examples/linear_time_model.py
    :language: python
-   :lines: 7-22
+   :lines: 7-25
    :linenos:
 
 Loading event data from cloud
@@ -74,7 +74,7 @@ We can load this csv file with pandas.
 
 .. literalinclude:: ../../examples/linear_time_model.py
    :language: python
-   :lines: 24-29
+   :lines: 27-32
    :linenos:
 
 Building a linear model to map cloud time to lsl time
@@ -84,12 +84,19 @@ you can build a linear model to translate from one time series to the other.
 
 Once the linear model was fitted, we can apply it to map the cloud timestamps to lsl timestamps.
 
+.. literalinclude:: ../../examples/linear_time_model.py
+  :language: python
+  :lines: 34-
+  :linenos:
+
 .. hint::
    If you want to invert the mapping, to transform lsl timestamps to cloud timestamps,
    you'll have to change the order of arguments in ``time_mapper.fit`` to
-   ``time_mapper.fit(filtered_lsl_event_data[['time_stamps']], filtered_cloud_event_data[['timestamp [s]']])``
 
-.. literalinclude:: ../../examples/linear_time_model.py
-  :language: python
-  :lines: 36-
-  :linenos:
+   .. code-block:: diff
+
+       time_mapper.fit(
+      -   filtered_cloud_event_data[[event_column_timestamp]],
+          filtered_lsl_event_data[event_column_timestamp],
+      +   filtered_cloud_event_data[[event_column_timestamp]],
+       )
