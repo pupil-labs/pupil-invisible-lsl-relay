@@ -1,6 +1,7 @@
 import asyncio
 import concurrent.futures
 import logging
+import re
 
 import click
 from pupil_labs.realtime_api.discovery import Network
@@ -10,18 +11,25 @@ from pupil_labs.invisible_lsl_relay import relay
 logger = logging.getLogger(__name__)
 
 
-async def main_async(time_sync_interval: int = 60, timeout: int = 10):
-    discoverer = DeviceDiscoverer(timeout)
+async def main_async(device_address: str = None, outlet_name: str = None,
+                     time_sync_interval: int = 60, timeout: int = 10):
     try:
-        await discoverer.get_user_selected_device()
+        if device_address:
+            device_ip, device_port = get_user_defined_device(device_address)
+        else:
+            discoverer = DeviceDiscoverer(timeout)
+            device_ip, device_port = await discoverer.get_device_from_list()
+
+        adapter = relay.Relay(device_ip=device_ip, device_port=device_port,
+                              outlet_name=outlet_name)
+        await adapter.relay_receiver_to_publisher(time_sync_interval)
     except TimeoutError:
         logger.error(
-            'Make sure your device is connected to the same network.', exc_info=True
+            'Make sure your device is connected to the same network.',
+            exc_info=True
         )
-    assert discoverer.selected_device_info
-    adapter = relay.Relay(discoverer.selected_device_info)
-    await adapter.relay_receiver_to_publisher(time_sync_interval)
-    logger.info('The LSL stream was closed.')
+    finally:
+        logger.info('The LSL stream was closed.')
 
 
 class DeviceDiscoverer:
@@ -30,36 +38,31 @@ class DeviceDiscoverer:
         self.search_timeout = search_timeout
         self.n_reload = 0
 
-    async def get_user_selected_device(self):
+    async def get_device_from_list(self):
         async with Network() as network:
             print("Looking for devices in your network...\n\t", end="")
             await network.wait_for_new_device(timeout_seconds=self.search_timeout)
 
             while self.selected_device_info is None:
-                print("\n======================================")
-                print("Please select a Pupil Invisible device by index:")
-                print("\tIndex\tAddress" + (" " * 14) + "\tName")
-                for device_index, device_info in enumerate(network.devices):
-                    ip = device_info.addresses[0]
-                    port = device_info.port
-                    full_name = device_info.name
-                    name = full_name.split(":")[1]
-                    print(f"\t{device_index}\t{ip}:{port}\t{name}")
-
-                print()
-                print("To reload the list, hit enter. ")
-                print("To abort device selection, use 'ctrl+c' and hit 'enter'")
-                if self.n_reload >= 5:
-                    print(
-                        "Can't find the device you're looking for?\n"
-                        "Make sure the Companion App is connected to the same "
-                        "network and at least version v1.4.14."
-                    )
+                print_device_list(network, self.n_reload)
                 self.n_reload += 1
                 user_input = await input_async()
                 self.selected_device_info = evaluate_user_input(
                     user_input, network.devices
                 )
+        return self.selected_device_info.addresses[0], self.selected_device_info.port
+
+
+def get_user_defined_device(device_address):
+    ip_regex = r"\d*\.\d*\.\d*\.\d*:\d*"
+    try:
+        assert re.search(ip_regex, device_address)
+        address = parse_ip(device_address)
+        port = parse_port(device_address)
+        return address, port
+    except AssertionError:
+        raise ValueError('Device address could not be parsed in IP and port!\n '
+                         'Please provide the address in the format IP:port')
 
 
 async def input_async():
@@ -84,6 +87,34 @@ def evaluate_user_input(user_input, device_list):
         return None
 
 
+def print_device_list(network, n_reload):
+    print("\n======================================")
+    print("Please select a Pupil Invisible device by index:")
+    print("\tIndex\tAddress" + (" " * 14) + "\tName")
+    for device_index, device_info in enumerate(network.devices):
+        ip = device_info.addresses[0]
+        port = device_info.port
+        full_name = device_info.name
+        name = full_name.split(":")[1]
+        print(f"\t{device_index}\t{ip}:{port}\t{name}")
+
+    print()
+    print("To reload the list, hit enter. ")
+    print("To abort device selection, use 'ctrl+c' and hit 'enter'")
+    if n_reload >= 5:
+        print(
+            "Can't find the device you're looking for?\n"
+            "Make sure the Companion App is connected to the same "
+            "network and at least version v1.4.14."
+        )
+
+
+def parse_ip(user_input): return user_input.split(':')[0]
+
+
+def parse_port(user_input): return int(user_input.split(':')[1])
+
+
 @click.command()
 @click.option(
     "--time_sync_interval",
@@ -103,7 +134,17 @@ def evaluate_user_input(user_input, device_list):
     default="pi_lsl_relay.log",
     help="Name and path where the log file is saved.",
 )
-def relay_setup_and_start(log_file_name: str, timeout: int, time_sync_interval: int):
+@click.option(
+    "--device_address",
+    help="Specify the ip address and port of the pupil invisible device "
+         "you want to relay."
+)
+@click.option(
+    "--outlet_name",
+    help="Pass optional names to the lsl outlets."
+)
+def relay_setup_and_start(device_address: str, outlet_name: str, log_file_name: str,
+                          timeout: int, time_sync_interval: int):
     try:
         logging.basicConfig(
             level=logging.DEBUG,
@@ -113,13 +154,14 @@ def relay_setup_and_start(log_file_name: str, timeout: int, time_sync_interval: 
         # set up console logging
         stream_handler = logging.StreamHandler()
         stream_handler.setLevel(logging.INFO)
-        formatter = logging.Formatter('%(name)s | %(levelname)s | %(message)s')
+        formatter = logging.Formatter('%(name)s\t| %(levelname)s\t| %(message)s')
         stream_handler.setFormatter(formatter)
 
         logging.getLogger().addHandler(stream_handler)
 
         asyncio.run(
-            main_async(time_sync_interval=time_sync_interval, timeout=timeout),
+            main_async(device_address=device_address, outlet_name=outlet_name,
+                       time_sync_interval=time_sync_interval, timeout=timeout),
             debug=False,
         )
     except KeyboardInterrupt:

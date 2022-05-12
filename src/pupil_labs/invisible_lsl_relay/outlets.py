@@ -17,12 +17,14 @@ logger = logging.getLogger(__name__)
 
 class PupilInvisibleOutlet:
     def __init__(
-        self, channel_func, outlet_name, outlet_format, timestamp_query, outlet_uuid
+        self, channel_func, outlet_type, outlet_format,
+        timestamp_query, user_defined_prefix
     ):
-        self._outlet_uuid = outlet_uuid
+        self._outlet_uuid = str(uuid.uuid4())
         self._channels = channel_func()
         self._outlet = pi_create_outlet(
-            self._outlet_uuid, self._channels, outlet_name, outlet_format
+            self._outlet_uuid, self._channels, outlet_type,
+            outlet_format, user_defined_prefix
         )
         self._timestamp_query = timestamp_query
 
@@ -38,37 +40,40 @@ class PupilInvisibleOutlet:
 
 
 class PupilInvisibleGazeOutlet(PupilInvisibleOutlet):
-    def __init__(self, device_id=None):
+    def __init__(self, outlet_name=None):
         PupilInvisibleOutlet.__init__(
             self,
             channel_func=pi_gaze_channels,
-            outlet_name='Gaze',
+            outlet_type='Gaze',
             outlet_format=lsl.cf_double64,
             timestamp_query=pi_extract_from_sample('timestamp_unix_seconds'),
-            outlet_uuid=f'{device_id or str(uuid.uuid4())}_Gaze',
+            user_defined_prefix=outlet_name
         )
 
 
 class PupilInvisibleEventOutlet(PupilInvisibleOutlet):
-    def __init__(self, device_id=None):
+    def __init__(self, outlet_name=None):
         PupilInvisibleOutlet.__init__(
             self,
             channel_func=pi_event_channels,
-            outlet_name='Event',
+            outlet_type='Event',
             outlet_format=lsl.cf_string,
             timestamp_query=pi_extract_from_sample('timestamp_unix_seconds'),
-            outlet_uuid=f'{device_id or str(uuid.uuid4())}_Event',
+            user_defined_prefix=outlet_name
         )
 
 
-def pi_create_outlet(outlet_uuid, channels, outlet_name, outlet_format):
-    stream_info = pi_streaminfo(outlet_uuid, channels, outlet_name, outlet_format)
+def pi_create_outlet(outlet_uuid, channels, outlet_type,
+                     outlet_format, user_defined_prefix):
+    stream_info = pi_streaminfo(outlet_uuid, channels, outlet_type,
+                                outlet_format, user_defined_prefix)
     return lsl.StreamOutlet(stream_info)
 
 
-def pi_streaminfo(outlet_uuid, channels, type_name: str, channel_format):
+def pi_streaminfo(outlet_uuid, channels, type_name: str,
+                  channel_format, user_defined_prefix):
     stream_info = lsl.StreamInfo(
-        name=f"pupil_invisible_{type_name}",
+        name=f"{user_defined_prefix or 'pupil_invisible'}_{type_name}",
         type=type_name,
         channel_count=len(channels),
         channel_format=channel_format,
