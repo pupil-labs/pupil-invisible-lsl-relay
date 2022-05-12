@@ -5,23 +5,26 @@ import re
 
 import click
 from pupil_labs.realtime_api.discovery import Network
+from pupil_labs.realtime_api.device import Device
 
 from pupil_labs.invisible_lsl_relay import relay
 
 logger = logging.getLogger(__name__)
 
 
-async def main_async(device_address: str = None, outlet_name: str = None,
+async def main_async(device_address: str = None, channel_prefix: str = None,
                      time_sync_interval: int = 60, timeout: int = 10):
     try:
         if device_address:
-            device_ip, device_port = get_user_defined_device(device_address)
+            device_ip_address, device_port = get_user_defined_device(device_address)
         else:
             discoverer = DeviceDiscoverer(timeout)
-            device_ip, device_port = await discoverer.get_device_from_list()
-
-        adapter = relay.Relay(device_ip=device_ip, device_port=device_port,
-                              outlet_name=outlet_name)
+            device_ip_address, device_port = await discoverer.get_device_from_list()
+        device_identifier = await get_device_identifier(device_ip_address, device_port)
+        adapter = relay.Relay(device_ip=device_ip_address,
+                              device_port=device_port,
+                              device_identifier=device_identifier,
+                              channel_prefix=channel_prefix)
         await adapter.relay_receiver_to_publisher(time_sync_interval)
     except TimeoutError:
         logger.error(
@@ -63,6 +66,12 @@ def get_user_defined_device(device_address):
     except AssertionError:
         raise ValueError('Device address could not be parsed in IP and port!\n '
                          'Please provide the address in the format IP:port')
+
+
+async def get_device_identifier(device_ip, device_port):
+    async with Device(device_ip, device_port) as device:
+        status = await device.get_status()
+        return status.phone.device_id
 
 
 async def input_async():
@@ -140,10 +149,11 @@ def parse_port(user_input): return int(user_input.split(':')[1])
          "you want to relay."
 )
 @click.option(
-    "--outlet_name",
+    "--channel_prefix",
+    default="pupil_invisible",
     help="Pass optional names to the lsl outlets."
 )
-def relay_setup_and_start(device_address: str, outlet_name: str, log_file_name: str,
+def relay_setup_and_start(device_address: str, channel_prefix: str, log_file_name: str,
                           timeout: int, time_sync_interval: int):
     try:
         logging.basicConfig(
@@ -160,7 +170,7 @@ def relay_setup_and_start(device_address: str, outlet_name: str, log_file_name: 
         logging.getLogger().addHandler(stream_handler)
 
         asyncio.run(
-            main_async(device_address=device_address, outlet_name=outlet_name,
+            main_async(device_address=device_address, channel_prefix=channel_prefix,
                        time_sync_interval=time_sync_interval, timeout=timeout),
             debug=False,
         )

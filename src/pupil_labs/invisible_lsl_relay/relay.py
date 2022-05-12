@@ -10,12 +10,14 @@ logger = logging.getLogger(__name__)
 
 
 class Relay:
-    def __init__(self, device_ip, device_port, outlet_name):
+    def __init__(self, device_ip, device_port, device_identifier, channel_prefix):
         self.device_ip = device_ip
         self.device_port = device_port
         self.receiver = DataReceiver(device_ip, device_port)
-        self.gaze_outlet = outlets.PupilInvisibleGazeOutlet(outlet_name)
-        self.event_outlet = outlets.PupilInvisibleEventOutlet(outlet_name)
+        self.gaze_outlet = outlets.PupilInvisibleGazeOutlet(device_id=device_identifier,
+                                                            channel_prefix=channel_prefix)
+        self.event_outlet = outlets.PupilInvisibleEventOutlet(device_id=device_identifier,
+                                                              channel_prefix=channel_prefix)
         self.gaze_sample_queue = asyncio.Queue()
         self.publishing_gaze_task = None
         self.publishing_event_task = None
