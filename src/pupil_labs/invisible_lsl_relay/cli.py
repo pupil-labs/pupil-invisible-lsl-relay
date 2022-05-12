@@ -4,16 +4,20 @@ import logging
 import re
 
 import click
-from pupil_labs.realtime_api.discovery import Network
 from pupil_labs.realtime_api.device import Device
+from pupil_labs.realtime_api.discovery import Network
 
 from pupil_labs.invisible_lsl_relay import relay
 
 logger = logging.getLogger(__name__)
 
 
-async def main_async(device_address: str = None, channel_prefix: str = None,
-                     time_sync_interval: int = 60, timeout: int = 10):
+async def main_async(
+    device_address: str = None,
+    channel_prefix: str = None,
+    time_sync_interval: int = 60,
+    timeout: int = 10,
+):
     try:
         if device_address:
             device_ip_address, device_port = get_user_defined_device(device_address)
@@ -21,15 +25,16 @@ async def main_async(device_address: str = None, channel_prefix: str = None,
             discoverer = DeviceDiscoverer(timeout)
             device_ip_address, device_port = await discoverer.get_device_from_list()
         device_identifier = await get_device_identifier(device_ip_address, device_port)
-        adapter = relay.Relay(device_ip=device_ip_address,
-                              device_port=device_port,
-                              device_identifier=device_identifier,
-                              channel_prefix=channel_prefix)
+        adapter = relay.Relay(
+            device_ip=device_ip_address,
+            device_port=device_port,
+            device_identifier=device_identifier,
+            channel_prefix=channel_prefix,
+        )
         await adapter.relay_receiver_to_publisher(time_sync_interval)
     except TimeoutError:
         logger.error(
-            'Make sure your device is connected to the same network.',
-            exc_info=True
+            'Make sure your device is connected to the same network.', exc_info=True
         )
     finally:
         logger.info('The LSL stream was closed.')
@@ -64,8 +69,10 @@ def get_user_defined_device(device_address):
         port = parse_port(device_address)
         return address, port
     except AssertionError:
-        raise ValueError('Device address could not be parsed in IP and port!\n '
-                         'Please provide the address in the format IP:port')
+        raise ValueError(
+            'Device address could not be parsed in IP and port!\n '
+            'Please provide the address in the format IP:port'
+        )
 
 
 async def get_device_identifier(device_ip, device_port):
@@ -118,10 +125,12 @@ def print_device_list(network, n_reload):
         )
 
 
-def parse_ip(user_input): return user_input.split(':')[0]
+def parse_ip(user_input):
+    return user_input.split(':')[0]
 
 
-def parse_port(user_input): return int(user_input.split(':')[1])
+def parse_port(user_input):
+    return int(user_input.split(':')[1])
 
 
 @click.command()
@@ -146,15 +155,20 @@ def parse_port(user_input): return int(user_input.split(':')[1])
 @click.option(
     "--device_address",
     help="Specify the ip address and port of the pupil invisible device "
-         "you want to relay."
+    "you want to relay.",
 )
 @click.option(
     "--channel_prefix",
     default="pupil_invisible",
-    help="Pass optional names to the lsl outlets."
+    help="Pass optional names to the lsl outlets.",
 )
-def relay_setup_and_start(device_address: str, channel_prefix: str, log_file_name: str,
-                          timeout: int, time_sync_interval: int):
+def relay_setup_and_start(
+    device_address: str,
+    channel_prefix: str,
+    log_file_name: str,
+    timeout: int,
+    time_sync_interval: int,
+):
     try:
         logging.basicConfig(
             level=logging.DEBUG,
@@ -170,8 +184,12 @@ def relay_setup_and_start(device_address: str, channel_prefix: str, log_file_nam
         logging.getLogger().addHandler(stream_handler)
 
         asyncio.run(
-            main_async(device_address=device_address, channel_prefix=channel_prefix,
-                       time_sync_interval=time_sync_interval, timeout=timeout),
+            main_async(
+                device_address=device_address,
+                channel_prefix=channel_prefix,
+                time_sync_interval=time_sync_interval,
+                timeout=timeout,
+            ),
             debug=False,
         )
     except KeyboardInterrupt:

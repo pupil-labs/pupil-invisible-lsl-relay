@@ -14,10 +14,12 @@ class Relay:
         self.device_ip = device_ip
         self.device_port = device_port
         self.receiver = DataReceiver(device_ip, device_port)
-        self.gaze_outlet = outlets.PupilInvisibleGazeOutlet(device_id=device_identifier,
-                                                            channel_prefix=channel_prefix)
-        self.event_outlet = outlets.PupilInvisibleEventOutlet(device_id=device_identifier,
-                                                              channel_prefix=channel_prefix)
+        self.gaze_outlet = outlets.PupilInvisibleGazeOutlet(
+            device_id=device_identifier, channel_prefix=channel_prefix
+        )
+        self.event_outlet = outlets.PupilInvisibleEventOutlet(
+            device_id=device_identifier, channel_prefix=channel_prefix
+        )
         self.gaze_sample_queue = asyncio.Queue()
         self.publishing_gaze_task = None
         self.publishing_event_task = None
@@ -91,9 +93,9 @@ class Relay:
         # start time sync task
         if time_sync_interval:
             time_sync_task = asyncio.create_task(
-                send_events_in_interval(self.device_ip,
-                                        self.device_port,
-                                        time_sync_interval)
+                send_events_in_interval(
+                    self.device_ip, self.device_port, time_sync_interval
+                )
             )
             tasks.append(time_sync_task)
 
@@ -119,8 +121,7 @@ class DataReceiver:
             await self.event_queue.put(adapted_event)
 
     async def make_status_update_notifier(self):
-        async with Device(self.device_ip,
-                          self.device_port) as device:
+        async with Device(self.device_ip, self.device_port) as device:
             self.notifier = StatusUpdateNotifier(device, callbacks=[self.on_update])
             await self.notifier.receive_updates_start()
 
@@ -154,13 +155,14 @@ def handle_done_pending_tasks(done, pending):
 async def send_events_in_interval(device_ip, device_port, sec=60):
     n_events_sent = 0
     while True:
-        await send_timesync_event(device_ip, device_port, f'lsl.time_sync.{n_events_sent}')
+        await send_timesync_event(
+            device_ip, device_port, f'lsl.time_sync.{n_events_sent}'
+        )
         await asyncio.sleep(sec)
         n_events_sent += 1
         logger.debug(f'sent time synchronization event no {n_events_sent}')
 
 
 async def send_timesync_event(device_ip, device_port, message: str):
-    async with Device(device_ip,
-                      device_port) as device:
+    async with Device(device_ip, device_port) as device:
         await device.send_event(message)
