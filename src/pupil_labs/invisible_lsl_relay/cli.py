@@ -125,7 +125,9 @@ def relay_setup_and_start(log_file_name: str, timeout: int, time_sync_interval: 
         logging.getLogger().addHandler(stream_handler)
 
         # check epoch time
-        assert epoch_is(year=1970, month=1, day=1), f"Unexpected epoch: {time.gmtime(0)}"
+        assert epoch_is(
+            year=1970, month=1, day=1
+        ), f"Unexpected epoch: {time.gmtime(0)}"
 
         asyncio.run(
             main_async(time_sync_interval=time_sync_interval, timeout=timeout),
