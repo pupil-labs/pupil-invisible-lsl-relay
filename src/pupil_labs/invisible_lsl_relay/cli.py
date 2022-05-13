@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 async def main_async(
     device_address: str = None,
-    channel_prefix: str = None,
+    outlet_prefix: str = None,
     time_sync_interval: int = 60,
     timeout: int = 10,
 ):
@@ -29,7 +29,7 @@ async def main_async(
             device_ip=device_ip_address,
             device_port=device_port,
             device_identifier=device_identifier,
-            channel_prefix=channel_prefix,
+            outlet_prefix=outlet_prefix,
         )
         await adapter.relay_receiver_to_publisher(time_sync_interval)
     except TimeoutError:
@@ -62,17 +62,18 @@ class DeviceDiscoverer:
 
 
 def get_user_defined_device(device_address):
-    ip_regex = r"\d*\.\d*\.\d*\.\d*:\d*"
     try:
-        assert re.search(ip_regex, device_address)
-        address = parse_ip(device_address)
-        port = parse_port(device_address)
+        address, port = device_address.split(':')
+        port = int(port)
+        if address == "":
+            raise ValueError("Empty address")
+        print(address, port)
         return address, port
-    except AssertionError:
+    except ValueError as exc:
         raise ValueError(
             'Device address could not be parsed in IP and port!\n '
             'Please provide the address in the format IP:port'
-        )
+        ) from exc
 
 
 async def get_device_identifier(device_ip, device_port):
@@ -125,14 +126,6 @@ def print_device_list(network, n_reload):
         )
 
 
-def parse_ip(user_input):
-    return user_input.split(':')[0]
-
-
-def parse_port(user_input):
-    return int(user_input.split(':')[1])
-
-
 @click.command()
 @click.option(
     "--time_sync_interval",
@@ -158,13 +151,13 @@ def parse_port(user_input):
     "you want to relay.",
 )
 @click.option(
-    "--channel_prefix",
+    "--outlet_prefix",
     default="pupil_invisible",
     help="Pass optional names to the lsl outlets.",
 )
 def relay_setup_and_start(
     device_address: str,
-    channel_prefix: str,
+    outlet_prefix: str,
     log_file_name: str,
     timeout: int,
     time_sync_interval: int,
@@ -186,7 +179,7 @@ def relay_setup_and_start(
         asyncio.run(
             main_async(
                 device_address=device_address,
-                channel_prefix=channel_prefix,
+                outlet_prefix=outlet_prefix,
                 time_sync_interval=time_sync_interval,
                 timeout=timeout,
             ),

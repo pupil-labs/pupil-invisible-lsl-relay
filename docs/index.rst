@@ -29,8 +29,8 @@ The Relay takes the following optional arguments:
   are skipped. The correct format to pass the device address is ``device_ip:device_port`` the ip address and
   the port of your device can be found in the companion app under Menu -> Streaming.
 
-- ``--channel_prefix PREFIX`` sets the prefix of the channel name displayed in lab recorder. The default prefix
-  is ``pupil_invisible``. Each channel will also have a suffix, specifying the channel type (Gaze or Event)
+- ``--outlet_prefix PREFIX`` sets the prefix of the outlet name displayed in lab recorder. The default prefix
+  is ``pupil_invisible``. Each outlet will also have a suffix, specifying the data stream type (Gaze or Event)
 
 .. caution::
    The Relay currently relies on `NTP`_ for time synchronization between the phone and

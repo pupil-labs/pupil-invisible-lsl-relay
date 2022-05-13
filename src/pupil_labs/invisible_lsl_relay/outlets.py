@@ -1,6 +1,5 @@
 import logging
 import time
-import uuid
 
 import pylsl as lsl
 
@@ -10,7 +9,7 @@ from pupil_labs.invisible_lsl_relay.channels import (
     pi_gaze_channels,
 )
 
-VERSION = "1.0"
+VERSION = "2.1.0"
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +21,7 @@ class PupilInvisibleOutlet:
         outlet_type,
         outlet_format,
         timestamp_query,
-        channel_name_prefix,
+        outlet_name_prefix,
         outlet_uuid,
     ):
         self._outlet_uuid = outlet_uuid
@@ -32,7 +31,7 @@ class PupilInvisibleOutlet:
             self._channels,
             outlet_type,
             outlet_format,
-            channel_name_prefix,
+            outlet_name_prefix,
         )
         self._timestamp_query = timestamp_query
 
@@ -48,45 +47,45 @@ class PupilInvisibleOutlet:
 
 
 class PupilInvisibleGazeOutlet(PupilInvisibleOutlet):
-    def __init__(self, device_id, channel_prefix=None):
+    def __init__(self, device_id, outlet_prefix=None):
         PupilInvisibleOutlet.__init__(
             self,
             channel_func=pi_gaze_channels,
             outlet_type='Gaze',
             outlet_format=lsl.cf_double64,
             timestamp_query=pi_extract_from_sample('timestamp_unix_seconds'),
-            channel_name_prefix=channel_prefix,
+            outlet_name_prefix=outlet_prefix,
             outlet_uuid=f'{device_id}_Gaze',
         )
 
 
 class PupilInvisibleEventOutlet(PupilInvisibleOutlet):
-    def __init__(self, device_id, channel_prefix=None):
+    def __init__(self, device_id, outlet_prefix=None):
         PupilInvisibleOutlet.__init__(
             self,
             channel_func=pi_event_channels,
             outlet_type='Event',
             outlet_format=lsl.cf_string,
             timestamp_query=pi_extract_from_sample('timestamp_unix_seconds'),
-            channel_name_prefix=channel_prefix,
+            outlet_name_prefix=outlet_prefix,
             outlet_uuid=f'{device_id}_Event',
         )
 
 
 def pi_create_outlet(
-    outlet_uuid, channels, outlet_type, outlet_format, channel_name_prefix
+    outlet_uuid, channels, outlet_type, outlet_format, outlet_name_prefix
 ):
     stream_info = pi_streaminfo(
-        outlet_uuid, channels, outlet_type, outlet_format, channel_name_prefix
+        outlet_uuid, channels, outlet_type, outlet_format, outlet_name_prefix
     )
     return lsl.StreamOutlet(stream_info)
 
 
 def pi_streaminfo(
-    outlet_uuid, channels, type_name: str, channel_format, channel_name_prefix
+    outlet_uuid, channels, type_name: str, channel_format, outlet_name_prefix
 ):
     stream_info = lsl.StreamInfo(
-        name=f"{channel_name_prefix}_{type_name}",
+        name=f"{outlet_name_prefix}_{type_name}",
         type=type_name,
         channel_count=len(channels),
         channel_format=channel_format,
