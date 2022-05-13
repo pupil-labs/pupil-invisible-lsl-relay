@@ -1,3 +1,7 @@
+2.1.0
+#####
+- Add check for correct epoch
+
 2.0.1
 #####
 - Document minimum Pupil Invisible Companion version required (v1.4.14)
