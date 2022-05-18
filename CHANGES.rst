@@ -1,3 +1,7 @@
+2.1.0
+#####
+- Add check for correct epoch
+
 2.0.2
 #####
 - Fix default duration of network search (10 seconds)
