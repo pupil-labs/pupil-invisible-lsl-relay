@@ -1,7 +1,7 @@
 import asyncio
 import concurrent.futures
 import logging
-import re
+import time
 
 import click
 from pupil_labs.realtime_api.device import Device
@@ -126,6 +126,11 @@ def print_device_list(network, n_reload):
         )
 
 
+def epoch_is(year, month, day):
+    epoch = time.gmtime(0)
+    return epoch.tm_year == year and epoch.tm_mon == month and epoch.tm_mday == day
+
+
 @click.command()
 @click.option(
     "--time_sync_interval",
@@ -175,6 +180,11 @@ def relay_setup_and_start(
         stream_handler.setFormatter(formatter)
 
         logging.getLogger().addHandler(stream_handler)
+
+        # check epoch time
+        assert epoch_is(
+            year=1970, month=1, day=1
+        ), f"Unexpected epoch: {time.gmtime(0)}"
 
         asyncio.run(
             main_async(
