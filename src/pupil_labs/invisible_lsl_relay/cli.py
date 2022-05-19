@@ -89,10 +89,10 @@ async def get_device_info_for_outlet(device_ip, device_port):
                 'is connected to the same network.'
             )
             raise exc
-        assert (
-            status.hardware.world_camera_serial
-        ), "The world camera is not connected to the device."
-        return status.phone.device_id, status.hardware.world_camera_serial
+        if not status.hardware.world_camera_serial:
+            logger.warning('The world camera is not connected.')
+        world_camera_serial = status.hardware.world_camera_serial or 'default'
+        return status.phone.device_id, world_camera_serial
 
 
 async def input_async():

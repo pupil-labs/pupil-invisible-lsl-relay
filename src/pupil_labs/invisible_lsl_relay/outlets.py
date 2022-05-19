@@ -58,7 +58,7 @@ class PupilInvisibleGazeOutlet(PupilInvisibleOutlet):
             timestamp_query=pi_extract_from_sample('timestamp_unix_seconds'),
             outlet_name_prefix=outlet_prefix,
             outlet_uuid=f'{device_id}_Gaze',
-            acquisition_info=set_acquisition_info(
+            acquisition_info=compose_acquisition_info(
                 version=VERSION, world_camera_serial=world_camera_serial
             ),
         )
@@ -74,7 +74,7 @@ class PupilInvisibleEventOutlet(PupilInvisibleOutlet):
             timestamp_query=pi_extract_from_sample('timestamp_unix_seconds'),
             outlet_name_prefix=outlet_prefix,
             outlet_uuid=f'{device_id}_Event',
-            acquisition_info=set_acquisition_info(
+            acquisition_info=compose_acquisition_info(
                 version=VERSION, world_camera_serial=world_camera_serial
             ),
         )
@@ -126,7 +126,7 @@ def get_lsl_time_offset():
     return time.time() - lsl.local_clock()
 
 
-def set_acquisition_info(
+def compose_acquisition_info(
     version, world_camera_serial, manufacturer='Pupil Labs', model='Pupil Invisible'
 ):
     return {
