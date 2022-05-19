@@ -24,12 +24,15 @@ async def main_async(
         else:
             discoverer = DeviceDiscoverer(timeout)
             device_ip_address, device_port = await discoverer.get_device_from_list()
-        device_identifier = await get_device_identifier(device_ip_address, device_port)
+        device_identifier, world_camera_serial = await get_device_info_for_outlet(
+            device_ip_address, device_port
+        )
         adapter = relay.Relay(
             device_ip=device_ip_address,
             device_port=device_port,
             device_identifier=device_identifier,
             outlet_prefix=outlet_prefix,
+            world_camera_serial=world_camera_serial,
         )
         await adapter.relay_receiver_to_publisher(time_sync_interval)
     except TimeoutError:
@@ -75,7 +78,7 @@ def get_user_defined_device(device_address):
         ) from exc
 
 
-async def get_device_identifier(device_ip, device_port):
+async def get_device_info_for_outlet(device_ip, device_port):
     async with Device(device_ip, device_port) as device:
         try:
             status = await asyncio.wait_for(device.get_status(), 10)
@@ -86,7 +89,10 @@ async def get_device_identifier(device_ip, device_port):
                 'is connected to the same network.'
             )
             raise exc
-        return status.phone.device_id
+        assert (
+            status.hardware.world_camera_serial
+        ), "The world camera is not connected to the device."
+        return status.phone.device_id, status.hardware.world_camera_serial
 
 
 async def input_async():

@@ -4,6 +4,8 @@
 - Allow for direct device selection through command line argument
 - Outlet prefix can be set though command line argument
 - Restructure relay module to accept device ip and port explicitly, instead of accepting DiscoveredDeviceInfo
+- Add an acquisition field to the outlet metadata, including manufacturer, model, version and the
+  serial number of the world camera
 
 2.0.2
 #####
