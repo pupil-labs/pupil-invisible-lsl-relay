@@ -1,6 +1,9 @@
 2.1.0
 #####
 - Add check for correct epoch
+- Allow for direct device selection through command line argument
+- Outlet prefix can be set though command line argument
+- Restructure relay module to accept device ip and port explicitly, instead of accepting DiscoveredDeviceInfo
 
 2.0.2
 #####
