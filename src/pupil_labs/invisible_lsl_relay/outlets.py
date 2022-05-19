@@ -3,13 +3,14 @@ import time
 
 import pylsl as lsl
 
+from pupil_labs.invisible_lsl_relay import __version__
 from pupil_labs.invisible_lsl_relay.channels import (
     pi_event_channels,
     pi_extract_from_sample,
     pi_gaze_channels,
 )
 
-VERSION = "2.1.0"
+VERSION = __version__
 
 logger = logging.getLogger(__name__)
 
