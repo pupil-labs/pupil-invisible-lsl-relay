@@ -67,7 +67,6 @@ def get_user_defined_device(device_address):
         port = int(port)
         if address == "":
             raise ValueError("Empty address")
-        print(address, port)
         return address, port
     except ValueError as exc:
         raise ValueError(
@@ -78,7 +77,15 @@ def get_user_defined_device(device_address):
 
 async def get_device_identifier(device_ip, device_port):
     async with Device(device_ip, device_port) as device:
-        status = await device.get_status()
+        try:
+            status = await asyncio.wait_for(device.get_status(), 10)
+        except asyncio.TimeoutError as exc:
+            logger.error(
+                'This ip address was not found in the network. '
+                'Please check for typos and make sure the device '
+                'is connected to the same network.'
+            )
+            raise exc
         return status.phone.device_id
 
 

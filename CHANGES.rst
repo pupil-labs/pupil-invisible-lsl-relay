@@ -5,7 +5,6 @@
 - Outlet prefix can be set though command line argument
 - Restructure relay module to accept device ip and port explicitly, instead of accepting DiscoveredDeviceInfo
 
-
 2.0.2
 #####
 - Fix default duration of network search (10 seconds)
