@@ -1,8 +1,8 @@
+import json
 import os.path
+import pathlib
 
 import click
-import json
-import pathlib
 import pyxdf
 
 
@@ -24,8 +24,10 @@ def check_input(path_to_xdf, paths_to_export):
     for path in paths_to_export:
         # each path to an export should be a valid path
         if not pathlib.Path(path).is_dir():
-            raise NotADirectoryError('All paths provided after the path '
-                                     'to the xdf file must be valid directories.')
+            raise NotADirectoryError(
+                'All paths provided after the path '
+                'to the xdf file must be valid directories.'
+            )
 
 
 def load_files(path_to_xdf, paths_to_export):
@@ -45,8 +47,9 @@ def perform_time_alignment(xdf_path, recording_dir):
 def check_files(head, path):
     for x in head:
         if x['info']['type'][0] == 'Gaze':
-            xdf_camera_serial = x['info']['desc'][0][
-                'acquisition'][0]['world_camera_serial'][0]
+            xdf_camera_serial = x['info']['desc'][0]['acquisition'][0][
+                'world_camera_serial'
+            ][0]
             with open(path) as file:
                 data = json.load(file)
                 try:
