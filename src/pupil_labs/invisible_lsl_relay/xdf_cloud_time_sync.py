@@ -32,7 +32,10 @@ def check_input(path_to_xdf, paths_to_export):
 
 def load_files(path_to_xdf, paths_to_export):
     # load the xdf file
-    xdf_head, xdf_data = pyxdf.load_xdf(path_to_xdf)
+    try:
+        xdf_head, xdf_data = pyxdf.load_xdf(path_to_xdf)
+    except Exception:
+        raise IOError(f"Invalid xdf file {path_to_xdf}")
     for path in paths_to_export:
         for info_path in pathlib.Path(path).rglob("info.json"):
             if check_files(xdf_head, info_path):
