@@ -9,8 +9,16 @@ logger = logging.getLogger(__name__)
 
 
 @click.command()
-@click.argument('path_to_xdf', nargs=1, type=click.Path(exists=True), file_okay=True, dir_okay=False)
-@click.argument('paths_to_exports', nargs=-1, type=click.Path(exists=True), file_okay=False, dir_okay=True)
+@click.argument(
+    'path_to_xdf', nargs=1, type=click.Path(exists=True), file_okay=True, dir_okay=False
+)
+@click.argument(
+    'paths_to_exports',
+    nargs=-1,
+    type=click.Path(exists=True),
+    file_okay=False,
+    dir_okay=True,
+)
 def main(path_to_xdf, paths_to_exports):
     if len(paths_to_exports) == 0:
         logger.info('No paths to exports provided. Looking inside current directory.')
