@@ -10,20 +10,20 @@ logger = logging.getLogger(__name__)
 
 @click.command()
 @click.argument(
-    'path_to_xdf', nargs=1, type=click.Path(exists=True), file_okay=True, dir_okay=False
+    'path_to_xdf', nargs=1, type=click.Path(exists=True, file_okay=True, dir_okay=False)
 )
 @click.argument(
     'paths_to_exports',
     nargs=-1,
-    type=click.Path(exists=True),
-    file_okay=False,
-    dir_okay=True,
+    type=click.Path(exists=True,
+                    file_okay=False,
+                    dir_okay=True),
 )
 def main(path_to_xdf, paths_to_exports):
     # set the logging
     logging.basicConfig(
         level=logging.DEBUG,
-        filename='./invisible_lsl_relay/time_sync_poshoc.log',
+        filename='./time_sync_posthoc.log',
         format='%(asctime)s:%(name)s:%(levelname)s:%(message)s',
     )
     # set up console logging
