@@ -15,9 +15,7 @@ logger = logging.getLogger(__name__)
 @click.argument(
     'paths_to_exports',
     nargs=-1,
-    type=click.Path(exists=True,
-                    file_okay=False,
-                    dir_okay=True),
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
 )
 def main(path_to_xdf, paths_to_exports):
     # set the logging
