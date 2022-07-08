@@ -5,7 +5,6 @@ import pathlib
 import click
 import pyxdf
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -24,7 +23,7 @@ def load_files(path_to_xdf, paths_to_export):
     try:
         xdf_head, xdf_data = pyxdf.load_xdf(path_to_xdf)
     except Exception:
-        raise IOError(f"Invalid xdf file {path_to_xdf}")
+        raise OSError(f"Invalid xdf file {path_to_xdf}")
     # extract all serial numbers from gaze streams
     xdf_serial_nums = extract_serial_num_from_xdf(xdf_head)
     # check cloud export paths
@@ -57,9 +56,11 @@ def extract_serial_num_from_xdf(xdf_head):
                 ][0]
                 camera_serial_nums.append(xdf_camera_serial)
         except KeyError as e:
-            logger.error("The xdf file does not contain the expected fields."
-                         "Make sure it's been streamed with the pupil invisible"
-                         "lsl relay version 2.1.0 or higher.")
+            logger.error(
+                "The xdf file does not contain the expected fields."
+                "Make sure it's been streamed with the pupil invisible"
+                "lsl relay version 2.1.0 or higher."
+            )
             raise e
     return camera_serial_nums
 
