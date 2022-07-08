@@ -9,8 +9,8 @@ logger = logging.getLogger(__name__)
 
 
 @click.command()
-@click.argument('path_to_xdf', nargs=1, type=click.Path(exists=True))
-@click.argument('paths_to_exports', nargs=-1, type=click.Path(exists=True))
+@click.argument('path_to_xdf', nargs=1, type=click.Path(exists=True), file_okay=True, dir_okay=False)
+@click.argument('paths_to_exports', nargs=-1, type=click.Path(exists=True), file_okay=False, dir_okay=True)
 def main(path_to_xdf, paths_to_exports):
     if len(paths_to_exports) == 0:
         logger.info('No paths to exports provided. Looking inside current directory.')
@@ -70,7 +70,7 @@ def extract_serial_num_from_infojson(data_infojson):
         cloud_camera_serial = data_infojson['scene_camera_serial_number']
         return cloud_camera_serial
     except KeyError:
-        # this is not a pupil info file
+        logger.warning(f"Found invalid info.json file at {data_infojson.resolve()}")
         return None
 
 
