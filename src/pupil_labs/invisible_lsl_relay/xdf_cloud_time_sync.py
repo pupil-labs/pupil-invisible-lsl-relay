@@ -78,12 +78,11 @@ def extract_serial_num_from_xdf(xdf_head):
                 ][0]
                 camera_serial_nums.append(xdf_camera_serial)
         except KeyError as e:
-            logger.error(
-                "The xdf file does not contain the expected fields."
-                "Make sure it's been streamed with the pupil invisible"
-                "lsl relay version 2.1.0 or higher."
-            )
-            raise e
+            raise KeyError(
+                "The xdf file does not contain the expected fields. "
+                "Make sure it's been streamed with the Pupil Invisible "
+                "LSL Relay version 2.1.0 or higher."
+            ) from e
     return camera_serial_nums
 
 
