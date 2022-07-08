@@ -13,6 +13,20 @@ logger = logging.getLogger(__name__)
 @click.argument('path_to_xdf', nargs=1, type=click.Path(exists=True))
 @click.argument('paths_to_exports', nargs=-1, type=click.Path(exists=True))
 def main(path_to_xdf, paths_to_exports):
+    # set the logging
+    logging.basicConfig(
+        level=logging.DEBUG,
+        filename='./invisible_lsl_relay/time_sync_poshoc.log',
+        format='%(asctime)s:%(name)s:%(levelname)s:%(message)s',
+    )
+    # set up console logging
+    stream_handler = logging.StreamHandler()
+    stream_handler.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(name)s\t| %(levelname)s\t| %(message)s')
+    stream_handler.setFormatter(formatter)
+
+    logging.getLogger().addHandler(stream_handler)
+
     if len(paths_to_exports) == 0:
         logger.info('No paths to exports provided. Looking inside current directory.')
         paths_to_exports = ['.']
