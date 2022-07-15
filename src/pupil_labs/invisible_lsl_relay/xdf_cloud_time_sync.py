@@ -1,30 +1,28 @@
 import json
 import logging
 import pathlib
-import pupil_labs.invisible_lsl_relay.linear_time_model as lm_time
+
 import click
 import pyxdf
+
+import pupil_labs.invisible_lsl_relay.linear_time_model as lm_time
 
 logger = logging.getLogger(__name__)
 
 
 @click.command()
 @click.argument(
-    'path_to_xdf',
-    nargs=1,
-    type=click.Path(exists=True, file_okay=True, dir_okay=False)
+    'path_to_xdf', nargs=1, type=click.Path(exists=True, file_okay=True, dir_okay=False)
 )
 @click.argument(
     'paths_to_exports',
     nargs=-1,
-    type=click.Path(exists=True,
-                    file_okay=False,
-                    dir_okay=True),
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
 )
 @click.option(
     '--output_path',
     default='.',
-    type=click.Path(exists=True, file_okay=False, dir_okay=True)
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
 )
 def main(path_to_xdf, paths_to_exports, output_path):
     # set the logging
@@ -54,7 +52,9 @@ def main(path_to_xdf, paths_to_exports, output_path):
 def align_and_save_data(path_to_xdf, paths_to_cloud, output_path):
     # load the xdf file
     try:
-        xdf_head, xdf_data = pyxdf.load_xdf(path_to_xdf, select_streams=[{'type': 'Gaze'}])
+        xdf_head, xdf_data = pyxdf.load_xdf(
+            path_to_xdf, select_streams=[{'type': 'Gaze'}]
+        )
     except Exception:
         raise OSError(f"Invalid xdf file {path_to_xdf}")
     # extract all serial numbers from gaze streams
@@ -67,15 +67,19 @@ def align_and_save_data(path_to_xdf, paths_to_cloud, output_path):
             )
             if serial_num_found_in_xdf:
                 logger.debug(f'found serial number {serial_num}')
-                cloud_aligned_time, cloud_to_lsl_mapper,\
-                    lsl_to_cloud_mapper = lm_time.perform_time_alignment(
-                        path_to_xdf,
-                        info_path.parent,
-                        serial_num)
-                save_files(cloud_aligned_time,
-                           cloud_to_lsl_mapper,
-                           lsl_to_cloud_mapper,
-                           output_path)
+                (
+                    cloud_aligned_time,
+                    cloud_to_lsl_mapper,
+                    lsl_to_cloud_mapper,
+                ) = lm_time.perform_time_alignment(
+                    path_to_xdf, info_path.parent, serial_num
+                )
+                save_files(
+                    cloud_aligned_time,
+                    cloud_to_lsl_mapper,
+                    lsl_to_cloud_mapper,
+                    output_path,
+                )
 
 
 def json_serial_in_xdf(path_infojson, xdf_serial_nums):
@@ -125,11 +129,11 @@ def write_mapper_to_file(cloud_to_lsl, lsl_to_cloud):
     mapping_parameters = {
         'cloud_to_lsl': {
             'intercept': cloud_to_lsl.intercept_,
-            'slope': cloud_to_lsl.coef_[0]
+            'slope': cloud_to_lsl.coef_[0],
         },
         'lsl_to_cloud': {
             'intercept': lsl_to_cloud.intercept_,
-            'slope': lsl_to_cloud.coef_[0]
+            'slope': lsl_to_cloud.coef_[0],
         },
         'info': {
             'model_type': type(cloud_to_lsl).__name__,
@@ -140,4 +144,3 @@ def write_mapper_to_file(cloud_to_lsl, lsl_to_cloud):
 
 if __name__ == '__main__':
     main()
-
