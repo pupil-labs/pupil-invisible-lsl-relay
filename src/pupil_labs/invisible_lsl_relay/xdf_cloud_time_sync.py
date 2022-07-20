@@ -5,7 +5,7 @@ import pathlib
 import click
 import pyxdf
 
-import pupil_labs.invisible_lsl_relay.linear_time_model as lm_time
+import .linear_time_model as lm_time
 
 logger = logging.getLogger(__name__)
 
