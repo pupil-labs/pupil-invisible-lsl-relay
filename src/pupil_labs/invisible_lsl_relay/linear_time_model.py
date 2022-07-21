@@ -68,7 +68,7 @@ class TimeAlignmentModels:
     ) -> linear_model.LinearRegression:
         model = linear_model.LinearRegression()
         model.intercept_ = params['intercept']
-        model.coef_ = np.array(params['intercept'])
+        model.coef_ = np.array([params['intercept']])
         return model
 
 
