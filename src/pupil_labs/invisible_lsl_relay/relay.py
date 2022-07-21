@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import uuid
 
 from pupil_labs.realtime_api import Device, StatusUpdateNotifier, receive_gaze_data
 from pupil_labs.realtime_api.models import Event, Sensor
@@ -21,15 +22,18 @@ class Relay:
         self.device_ip = device_ip
         self.device_port = device_port
         self.receiver = DataReceiver(device_ip, device_port)
+        self.session_id = uuid.uuid4()
         self.gaze_outlet = outlets.PupilInvisibleGazeOutlet(
             device_id=device_identifier,
             outlet_prefix=outlet_prefix,
             world_camera_serial=world_camera_serial,
+            session_id=self.session_id,
         )
         self.event_outlet = outlets.PupilInvisibleEventOutlet(
             device_id=device_identifier,
             outlet_prefix=outlet_prefix,
             world_camera_serial=world_camera_serial,
+            session_id=self.session_id,
         )
         self.gaze_sample_queue = asyncio.Queue()
         self.publishing_gaze_task = None
