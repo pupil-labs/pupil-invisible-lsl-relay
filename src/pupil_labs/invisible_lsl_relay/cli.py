@@ -6,6 +6,11 @@ import time
 import click
 from pupil_labs.realtime_api.device import Device
 from pupil_labs.realtime_api.discovery import Network
+from rich import print
+from rich.console import group
+from rich.live import Live
+from rich.logging import RichHandler
+from rich.table import Table
 
 from pupil_labs.invisible_lsl_relay import relay
 
@@ -51,16 +56,20 @@ class DeviceDiscoverer:
 
     async def get_device_from_list(self):
         async with Network() as network:
-            print("Looking for devices in your network...\n\t", end="")
-            await network.wait_for_new_device(timeout_seconds=self.search_timeout)
-
-            while self.selected_device_info is None:
-                print_device_list(network, self.n_reload)
-                self.n_reload += 1
-                user_input = await input_async()
-                self.selected_device_info = evaluate_user_input(
-                    user_input, network.devices
-                )
+            with Live(
+                "[blue]Looking for devices in your network...",
+                auto_refresh=False,
+                redirect_stdout=False,
+            ) as live:
+                await network.wait_for_new_device(timeout_seconds=self.search_timeout)
+                while self.selected_device_info is None:
+                    live.update(print_device_list(network, self.n_reload), refresh=True)
+                    self.n_reload += 1
+                    user_input = await input_async()
+                    self.selected_device_info = evaluate_user_input(
+                        user_input, network.devices
+                    )
+            logger.info(f"Connecting to {self.selected_device_info}")
         return self.selected_device_info.addresses[0], self.selected_device_info.port
 
 
@@ -100,7 +109,7 @@ async def input_async():
     # permalink_comment_id=3590322#gistcomment-3590322
     with concurrent.futures.ThreadPoolExecutor(1, 'AsyncInput') as executor:
         user_input = await asyncio.get_event_loop().run_in_executor(
-            executor, input, '>>> '
+            executor, input, ">>>"
         )
         return user_input.strip()
 
@@ -117,26 +126,36 @@ def evaluate_user_input(user_input, device_list):
         return None
 
 
+@group()
 def print_device_list(network, n_reload):
-    print("\n======================================")
-    print("Please select a Pupil Invisible device by index:")
-    print("\tIndex\tAddress" + (" " * 14) + "\tName")
+    yield ""
+    table = Table(title="Available Pupil Invisible Devices")
+    table.add_column("Index", style="blue")
+    table.add_column("Address")
+    table.add_column("Name")
     for device_index, device_info in enumerate(network.devices):
         ip = device_info.addresses[0]
         port = device_info.port
         full_name = device_info.name
         name = full_name.split(":")[1]
-        print(f"\t{device_index}\t{ip}:{port}\t{name}")
-
-    print()
-    print("To reload the list, hit enter. ")
-    print("To abort device selection, use 'ctrl+c' and hit 'enter'")
+        table.add_row(str(device_index), f"{ip}:{port}", name)
+    yield table
+    yield (
+        "[green] Select [/green] Enter [blue]index[/blue] and hit "
+        "[magenta]enter[/magenta]"
+    )
+    yield "[green] Reload [/green] Hit [magenta]enter[/magenta] without input"
+    yield (
+        "[yellow]  Abort [/yellow] Use [magenta]ctrl+c[/magenta] and hit "
+        "[magenta]enter[/magenta]"
+    )
     if n_reload >= 5:
-        print(
-            "Can't find the device you're looking for?\n"
+        yield (
+            "[yellow]Can't find the device you're looking for?\n"
             "Make sure the Companion App is connected to the same "
-            "network and at least version v1.4.14."
+            "network and at least version [bold]v1.4.14."
         )
+    yield ""
 
 
 def logger_setup(file_name, debug_level=logging.DEBUG):
@@ -146,11 +165,9 @@ def logger_setup(file_name, debug_level=logging.DEBUG):
         format='%(asctime)s:%(name)s:%(levelname)s:%(message)s',
     )
     # set up console logging
-    stream_handler = logging.StreamHandler()
-    stream_handler.setLevel(logging.INFO)
-    formatter = logging.Formatter('%(name)s\t| %(levelname)s\t| %(message)s')
+    stream_handler = RichHandler(level="INFO")
+    formatter = logging.Formatter('%(message)s')
     stream_handler.setFormatter(formatter)
-
     logging.getLogger().addHandler(stream_handler)
 
 
