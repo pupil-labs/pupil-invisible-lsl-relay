@@ -1,12 +1,11 @@
 # imports for the full pipeline
 import logging
 import pathlib
+from collections import namedtuple
 
 import numpy as np
 import pandas as pd
 import pyxdf
-
-from collections import namedtuple
 from sklearn import linear_model
 
 logger = logging.getLogger(__name__)
