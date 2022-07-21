@@ -109,7 +109,10 @@ class Relay:
         if time_sync_interval:
             time_sync_task = asyncio.create_task(
                 send_events_in_interval(
-                    self.device_ip, self.device_port, time_sync_interval
+                    self.device_ip,
+                    self.device_port,
+                    self.session_id,
+                    time_sync_interval,
                 )
             )
             tasks.append(time_sync_task)
@@ -167,11 +170,11 @@ def handle_done_pending_tasks(done, pending):
 
 
 # send events in intervals
-async def send_events_in_interval(device_ip, device_port, sec=60):
+async def send_events_in_interval(device_ip, device_port, session_id, sec=60):
     n_events_sent = 0
     while True:
         await send_timesync_event(
-            device_ip, device_port, f'lsl.time_sync.{n_events_sent}'
+            device_ip, device_port, f'lsl.time_sync.{session_id}.{n_events_sent}'
         )
         await asyncio.sleep(sec)
         n_events_sent += 1
