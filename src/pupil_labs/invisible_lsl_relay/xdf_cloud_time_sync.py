@@ -5,7 +5,8 @@ import pathlib
 import click
 import pyxdf
 
-import .linear_time_model as lm_time
+from .cli import logger_setup
+from .linear_time_model import perform_time_alignment
 
 logger = logging.getLogger(__name__)
 
@@ -26,26 +27,13 @@ logger = logging.getLogger(__name__)
 )
 def main(path_to_xdf, paths_to_exports, output_path):
     # set the logging
-    logging.basicConfig(
-        level=logging.DEBUG,
-        filename='./time_sync_posthoc.log',
-        format='%(asctime)s:%(name)s:%(levelname)s:%(message)s',
-    )
-    # set up console logging
-    stream_handler = logging.StreamHandler()
-    stream_handler.setLevel(logging.INFO)
-    formatter = logging.Formatter('%(name)s\t| %(levelname)s\t| %(message)s')
-    stream_handler.setFormatter(formatter)
-
-    logging.getLogger().addHandler(stream_handler)
+    logger_setup('./time_sync_posthoc.log')
 
     if len(paths_to_exports) == 0:
         logger.info('No paths to exports provided. Looking inside current directory.')
         paths_to_exports = ['.']
 
-    if not output_path.endswith('/'):
-        output_path += '/'
-
+    output_path = pathlib.Path(output_path)
     align_and_save_data(path_to_xdf, paths_to_exports, output_path)
 
 
@@ -53,42 +41,49 @@ def align_and_save_data(path_to_xdf, paths_to_cloud, output_path):
     # load the xdf file
     try:
         xdf_head, xdf_data = pyxdf.load_xdf(
-            path_to_xdf, select_streams=[{'type': 'Gaze'}]
+            path_to_xdf, select_streams=[{'type': 'Event'}]
         )
     except Exception:
         raise OSError(f"Invalid xdf file {path_to_xdf}")
     # extract all serial numbers from gaze streams
     xdf_serial_nums = extract_serial_num_from_xdf(xdf_head)
+    if not xdf_serial_nums:
+        raise ValueError(
+            "xdf file does not contain any valid Pupil Invisible event streams"
+        )
     # check cloud export paths
     for path in paths_to_cloud:
         for info_path in pathlib.Path(path).rglob("info.json"):
-            serial_num_found_in_xdf, serial_num = json_serial_in_xdf(
-                info_path, xdf_serial_nums
-            )
-            if serial_num_found_in_xdf:
-                logger.debug(f'found serial number {serial_num}')
-                (
-                    cloud_aligned_time,
-                    cloud_to_lsl_mapper,
-                    lsl_to_cloud_mapper,
-                ) = lm_time.perform_time_alignment(
+            try:
+                serial_num = extract_json_serial(
+                    info_path
+                )
+                assert serial_num in xdf_serial_nums
+            except KeyError:
+                # a json.info file without a serial number
+                # (probably not from a PI export)
+                logger.warning('Skipping invalid info.json file '
+                               f'at {info_path.resolve()}')
+            except AssertionError:
+                # a json.info file with an invalid serial number
+                # (from a PI export that was not in the xdf file)
+                pass
+            else:
+                result = perform_time_alignment(
                     path_to_xdf, info_path.parent, serial_num
                 )
                 save_files(
-                    cloud_aligned_time,
-                    cloud_to_lsl_mapper,
-                    lsl_to_cloud_mapper,
+                    result.cloud_aligned_time,
+                    result.cloud_to_lsl,
+                    result.lsl_to_cloud,
                     output_path,
                 )
 
 
-def json_serial_in_xdf(path_infojson, xdf_serial_nums):
+def extract_json_serial(path_infojson):
     with open(path_infojson) as infojson:
         data_infojson = json.load(infojson)
-        serial_infojson = extract_serial_num_from_infojson(data_infojson)
-        if serial_infojson in xdf_serial_nums:
-            return True, serial_infojson
-    return False, None
+        return data_infojson['scene_camera_serial_number']
 
 
 def extract_serial_num_from_xdf(xdf_head):
@@ -99,33 +94,20 @@ def extract_serial_num_from_xdf(xdf_head):
                 'world_camera_serial'
             ][0]
             camera_serial_nums.append(xdf_camera_serial)
-        except KeyError as e:
-            raise KeyError(
-                "The xdf file does not contain the expected fields. "
-                "Make sure it's been streamed with the Pupil Invisible "
-                "LSL Relay version 2.1.0 or higher."
-            ) from e
+        except KeyError:
+            logger.debug(f"Skipping non-Pupil-Invisible stream {x['info']['desc']}")
     return camera_serial_nums
 
 
-def extract_serial_num_from_infojson(data_infojson):
-    try:
-        cloud_camera_serial = data_infojson['scene_camera_serial_number']
-        return cloud_camera_serial
-    except KeyError:
-        logger.warning(f"Found invalid info.json file at {data_infojson.resolve()}")
-        return None
-
-
 def save_files(cloud_aligned_time, cloud_to_lsl, lsl_to_cloud, output_path):
-    cloud_aligned_time.to_csv(output_path + 'gaze.csv')
+    cloud_aligned_time.to_csv(output_path /'gaze.csv')
 
-    mapping_parameters = write_mapper_to_file(cloud_to_lsl, lsl_to_cloud)
-    with open(output_path + 'parameters.json', 'w') as out_file:
+    mapping_parameters = mapping_params_to_dict(cloud_to_lsl, lsl_to_cloud)
+    with open(output_path/'parameters.json', 'w') as out_file:
         json.dump(mapping_parameters, out_file, indent=4)
 
 
-def write_mapper_to_file(cloud_to_lsl, lsl_to_cloud):
+def mapping_params_to_dict(cloud_to_lsl, lsl_to_cloud):
     mapping_parameters = {
         'cloud_to_lsl': {
             'intercept': cloud_to_lsl.intercept_,

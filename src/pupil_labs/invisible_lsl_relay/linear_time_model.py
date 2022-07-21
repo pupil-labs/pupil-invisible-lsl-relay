@@ -5,6 +5,8 @@ import pathlib
 import numpy as np
 import pandas as pd
 import pyxdf
+
+from collections import namedtuple
 from sklearn import linear_model
 
 logger = logging.getLogger(__name__)
@@ -29,11 +31,10 @@ def perform_time_alignment(xdf_path, cloud_path, xdf_serial_num):
         xdf_path, cloud_path, xdf_serial_num
     )
 
-    cloud_aligned_time, cloud_to_lsl, lsl_to_cloud = fit_linear_model(
+    result = fit_linear_model(
         filtered_xdf_data, filtered_cloud_data, cloud_path
     )
-
-    return cloud_aligned_time, cloud_to_lsl, lsl_to_cloud
+    return result
 
 
 def get_filtered_events(xdf_path, cloud_path, xdf_serial_num):
@@ -119,7 +120,9 @@ def fit_linear_model(
         cloud_gaze_data[[column_timestamp]]
     )
 
-    return cloud_gaze_data, cloud_to_lsl_mapper, lsl_to_cloud_mapper
+    Result = namedtuple('Result',
+                        ['cloud_aligned_time', 'cloud_to_lsl', 'lsl_to_cloud'])
+    return Result(cloud_gaze_data, cloud_to_lsl_mapper, lsl_to_cloud_mapper)
 
 
 def linear_time_mapper(x, y):
@@ -129,21 +132,13 @@ def linear_time_mapper(x, y):
     return mapper
 
 
-def load_df_from_dir(dir_name, file_name, expected_n=1):
-    if expected_n > 1:
-        all_dfs = []
-
+def load_df_from_dir(dir_name, file_name):
     files = list(pathlib.Path(dir_name).rglob(file_name))
-    if len(files) != expected_n:
+    if len(files) != 1:
         raise ValueError(
             f'There was not the correct number of event files in the '
             f"directory {dir_name} and it's sub directories."
-            f'expected {expected_n}, but got {len(file_name)}.'
+            f'expected one file, but got {len(file_name)}.'
         )
 
-    for file in files:
-        csv_data = pd.read_csv(file)
-        if expected_n == 1:
-            return csv_data
-        all_dfs.append(csv_data)
-    return all_dfs
+    return pd.read_csv(files[0])
