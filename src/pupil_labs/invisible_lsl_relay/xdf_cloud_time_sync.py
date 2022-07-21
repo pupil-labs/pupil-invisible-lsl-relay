@@ -1,126 +1,163 @@
-import json
 import logging
-import pathlib
+import re
+import traceback
+from pathlib import Path
+from typing import Collection, Dict, Iterable, NamedTuple
 
 import click
+import numpy as np
+import pandas as pd
 import pyxdf
 
 from .cli import logger_setup
 from .linear_time_model import perform_time_alignment
 
 logger = logging.getLogger(__name__)
+event_column_name = 'name'
+event_column_timestamp = 'timestamp [s]'
 
 
 @click.command()
 @click.argument(
-    'path_to_xdf', nargs=1, type=click.Path(exists=True, file_okay=True, dir_okay=False)
+    'path_to_xdf',
+    nargs=1,
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=Path),
 )
 @click.argument(
     'paths_to_exports',
     nargs=-1,
-    type=click.Path(exists=True, file_okay=False, dir_okay=True),
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
 )
-@click.option(
-    '--output_path',
-    default='.',
-    type=click.Path(exists=True, file_okay=False, dir_okay=True),
-)
-def main(path_to_xdf, paths_to_exports, output_path):
+def main(path_to_xdf: Path, paths_to_exports: Collection[Path]):
     # set the logging
     logger_setup('./time_sync_posthoc.log')
 
     if len(paths_to_exports) == 0:
         logger.info('No paths to exports provided. Looking inside current directory.')
-        paths_to_exports = ['.']
+        paths_to_exports = (Path(),)
 
-    output_path = pathlib.Path(output_path)
-    align_and_save_data(path_to_xdf, paths_to_exports, output_path)
+    align_and_save_data(path_to_xdf, paths_to_exports)
 
 
-def align_and_save_data(path_to_xdf, paths_to_cloud, output_path):
-    # load the xdf file
-    try:
-        xdf_head, xdf_data = pyxdf.load_xdf(
-            path_to_xdf, select_streams=[{'type': 'Event'}]
-        )
-    except Exception:
-        raise OSError(f"Invalid xdf file {path_to_xdf}")
-    # extract all serial numbers from gaze streams
-    xdf_serial_nums = extract_serial_num_from_xdf(xdf_head)
-    if not xdf_serial_nums:
+def align_and_save_data(path_to_xdf: Path, paths_to_cloud: Iterable[Path]):
+    xdf_events = load_session_id_to_xdf_event_mapping(path_to_xdf)
+    for cloud_path in paths_to_cloud:
+        cloud_events = load_session_id_to_cloud_exports_mapping(cloud_path)
+
+        common_session_ids = xdf_events.keys() & cloud_events.keys()
+        for session_id in common_session_ids:
+            logger.info(f"Processing session {session_id}")
+            xdf_event_data = xdf_events[session_id]
+            cloud_event_info = cloud_events[session_id]  # TODO: find a better name
+
+            xdf_event_data, cloud_event_data = _filter_common_events(
+                _PairedDataFrames(xdf_event_data, cloud_event_info.data),
+                event_column_name,
+            )
+
+            result = perform_time_alignment(
+                xdf_event_data, cloud_event_data, event_column_timestamp
+            )
+            result_path = cloud_event_info.directory / "time_alignment_parameters.json"
+            logger.info(f"Writing time alignment parameters to {result_path}")
+            result.to_json(result_path)
+
+
+def load_session_id_to_xdf_event_mapping(path_to_xdf: Path) -> Dict[str, pd.DataFrame]:
+
+    mapping: Dict[str, pd.DataFrame] = {}
+    data, _ = pyxdf.load_xdf(path_to_xdf, select_streams=[{'type': 'Event'}])
+
+    for x in data:
+        try:
+            session_id: str = x['info']['desc'][0]['acquisition'][0]['session_id'][0]
+            mapping[session_id] = _xdf_events_to_dataframe(x)
+        except KeyError:
+            logger.debug(f"Skipping non-Pupil-Invisible stream {x['info']['desc']}")
+
+    if not mapping:
         raise ValueError(
             "xdf file does not contain any valid Pupil Invisible event streams"
         )
-    # check cloud export paths
-    for path in paths_to_cloud:
-        for info_path in pathlib.Path(path).rglob("info.json"):
-            try:
-                serial_num = extract_json_serial(info_path)
-                assert serial_num in xdf_serial_nums
-            except KeyError:
-                # a json.info file without a serial number
-                # (probably not from a PI export)
-                logger.warning(
-                    'Skipping invalid info.json file ' f'at {info_path.resolve()}'
-                )
-            except AssertionError:
-                # a json.info file with an invalid serial number
-                # (from a PI export that was not in the xdf file)
-                pass
-            else:
-                result = perform_time_alignment(
-                    path_to_xdf, info_path.parent, serial_num
-                )
-                save_files(
-                    result.cloud_aligned_time,
-                    result.cloud_to_lsl,
-                    result.lsl_to_cloud,
-                    output_path,
-                )
+
+    return mapping
 
 
-def extract_json_serial(path_infojson):
-    with open(path_infojson) as infojson:
-        data_infojson = json.load(infojson)
-        return data_infojson['scene_camera_serial_number']
+class CloudExportEvents(NamedTuple):
+    directory: Path
+    data: pd.DataFrame
 
 
-def extract_serial_num_from_xdf(xdf_head):
-    camera_serial_nums = []
-    for x in xdf_head:
+def load_session_id_to_cloud_exports_mapping(
+    search_root_path: Path,
+) -> Dict[str, CloudExportEvents]:
+    results: Dict[str, CloudExportEvents] = {}
+    for events_path in search_root_path.rglob("events.csv"):
+        data = pd.read_csv(events_path)
         try:
-            xdf_camera_serial = x['info']['desc'][0]['acquisition'][0][
-                'world_camera_serial'
-            ][0]
-            camera_serial_nums.append(xdf_camera_serial)
-        except KeyError:
-            logger.debug(f"Skipping non-Pupil-Invisible stream {x['info']['desc']}")
-    return camera_serial_nums
+            session_id = _extract_session_id_from_cloud_export_events(data)
+        except ValueError:
+            logger.warning(f"Could not extract session id from {events_path}")
+            logger.debug(traceback.format_exc())
+            continue
+        results[session_id] = CloudExportEvents(events_path.parent, data)
+    return results
 
 
-def save_files(cloud_aligned_time, cloud_to_lsl, lsl_to_cloud, output_path):
-    cloud_aligned_time.to_csv(output_path / 'gaze.csv')
+def _extract_session_id_from_cloud_export_events(data: pd.DataFrame) -> str:
+    pattern = re.compile(
+        r"lsl\.time_sync\."  # LSL event name prefix
+        r"(?P<session_id>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"
+        r"\.\d+"  # counter
+    )
+    names: pd.Series[str] = data[event_column_name]
+    lsl_events = names.loc[names.str.fullmatch(pattern)]
+    if lsl_events.empty:
+        raise ValueError(
+            "No events found that matched the LSL Relay pattern "
+            "(lsl.time_sync.<uuid>.<counter>)"
+        )
+    first_event: str = lsl_events.iloc[0]
+    result = re.match(pattern, first_event)
+    if not result:
+        raise Exception(
+            "This exception should never be reached since the events have been "
+            "filtered by the same pattern beforehand"
+        )
+    session_id = result.group("session_id")
+    return session_id
 
-    mapping_parameters = mapping_params_to_dict(cloud_to_lsl, lsl_to_cloud)
-    with open(output_path / 'parameters.json', 'w') as out_file:
-        json.dump(mapping_parameters, out_file, indent=4)
+
+class _PairedDataFrames(NamedTuple):
+    left: pd.DataFrame
+    right: pd.DataFrame
 
 
-def mapping_params_to_dict(cloud_to_lsl, lsl_to_cloud):
-    mapping_parameters = {
-        'cloud_to_lsl': {
-            'intercept': cloud_to_lsl.intercept_,
-            'slope': cloud_to_lsl.coef_[0],
-        },
-        'lsl_to_cloud': {
-            'intercept': lsl_to_cloud.intercept_,
-            'slope': lsl_to_cloud.coef_[0],
-        },
-        'info': {
-            'model_type': type(cloud_to_lsl).__name__,
-        },
-    }
-    return mapping_parameters
+def _filter_common_events(
+    data_frames: _PairedDataFrames, column: str
+) -> _PairedDataFrames:
+
+    col_left = data_frames.left[column]
+    col_right = data_frames.right[column]
+
+    col_value_intersection = np.intersect1d(col_left, col_right)
+
+    # filter timestamps by the event intersection
+    filtered_left = data_frames.left[col_left.isin(col_value_intersection)]
+    filtered_right = data_frames.right[col_right.isin(col_value_intersection)]
+
+    return _PairedDataFrames(filtered_left, filtered_right)
+
+
+def _xdf_events_to_dataframe(
+    event_stream, label_data=event_column_name, label_time=event_column_timestamp
+):
+    return pd.DataFrame(
+        {
+            label_data: [name[0] for name in event_stream['time_series']],
+            label_time: event_stream['time_stamps'],
+        }
+    )
 
 
 if __name__ == '__main__':
