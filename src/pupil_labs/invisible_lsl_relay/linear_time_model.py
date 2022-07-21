@@ -70,9 +70,12 @@ def load_xdf_events(path_to_xdf_recording, world_camera_serial_num):
 def xdf_event_to_df(
     event_stream, column_name=event_column_name, column_timestamp=event_column_timestamp
 ):
-    lsl_event_data = pd.DataFrame(columns=[column_name, column_timestamp])
-    lsl_event_data[column_name] = [name[0] for name in event_stream['time_series']]
-    lsl_event_data[column_timestamp] = event_stream['time_stamps']
+    lsl_event_data = pd.DataFrame(
+        {
+            column_name: [name[0] for name in event_stream['time_series']]
+            column_timestamp: event_stream['time_stamps']
+        }
+    )
 
     return lsl_event_data
 
