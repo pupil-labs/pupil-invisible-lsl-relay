@@ -158,6 +158,19 @@ def print_device_list(network, n_reload):
     yield ""
 
 
+def logger_setup(file_name, debug_level=logging.DEBUG):
+    logging.basicConfig(
+        level=debug_level,
+        filename=file_name,
+        format='%(asctime)s:%(name)s:%(levelname)s:%(message)s',
+    )
+    # set up console logging
+    stream_handler = RichHandler(level="INFO")
+    formatter = logging.Formatter('%(message)s')
+    stream_handler.setFormatter(formatter)
+    logging.getLogger().addHandler(stream_handler)
+
+
 def epoch_is(year, month, day):
     epoch = time.gmtime(0)
     return epoch.tm_year == year and epoch.tm_mon == month and epoch.tm_mday == day
@@ -200,14 +213,7 @@ def relay_setup_and_start(
     time_sync_interval: int,
 ):
     try:
-        logging.basicConfig(
-            level=logging.DEBUG,
-            filename=log_file_name,
-            format='%(asctime)s:%(name)s:%(levelname)s:%(message)s',
-        )
-        # set up console logging
-        stream_handler = RichHandler(level="INFO")
-        logging.getLogger().addHandler(stream_handler)
+        logger_setup(log_file_name)
 
         # check epoch time
         assert epoch_is(

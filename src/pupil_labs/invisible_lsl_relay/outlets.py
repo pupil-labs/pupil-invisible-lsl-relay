@@ -50,7 +50,9 @@ class PupilInvisibleOutlet:
 
 
 class PupilInvisibleGazeOutlet(PupilInvisibleOutlet):
-    def __init__(self, device_id, outlet_prefix=None, world_camera_serial=None):
+    def __init__(
+        self, device_id, outlet_prefix=None, world_camera_serial=None, session_id=None
+    ):
         PupilInvisibleOutlet.__init__(
             self,
             channel_func=pi_gaze_channels,
@@ -60,13 +62,17 @@ class PupilInvisibleGazeOutlet(PupilInvisibleOutlet):
             outlet_name_prefix=outlet_prefix,
             outlet_uuid=f'{device_id}_Gaze',
             acquisition_info=compose_acquisition_info(
-                version=VERSION, world_camera_serial=world_camera_serial
+                version=VERSION,
+                world_camera_serial=world_camera_serial,
+                session_id=session_id,
             ),
         )
 
 
 class PupilInvisibleEventOutlet(PupilInvisibleOutlet):
-    def __init__(self, device_id, outlet_prefix=None, world_camera_serial=None):
+    def __init__(
+        self, device_id, outlet_prefix=None, world_camera_serial=None, session_id=None
+    ):
         PupilInvisibleOutlet.__init__(
             self,
             channel_func=pi_event_channels,
@@ -76,7 +82,9 @@ class PupilInvisibleEventOutlet(PupilInvisibleOutlet):
             outlet_name_prefix=outlet_prefix,
             outlet_uuid=f'{device_id}_Event',
             acquisition_info=compose_acquisition_info(
-                version=VERSION, world_camera_serial=world_camera_serial
+                version=VERSION,
+                world_camera_serial=world_camera_serial,
+                session_id=session_id,
             ),
         )
 
@@ -128,11 +136,16 @@ def get_lsl_time_offset():
 
 
 def compose_acquisition_info(
-    version, world_camera_serial, manufacturer='Pupil Labs', model='Pupil Invisible'
+    version,
+    world_camera_serial,
+    session_id,
+    manufacturer='Pupil Labs',
+    model='Pupil Invisible',
 ):
     return {
         'manufacturer': manufacturer,
         'model': model,
         'world_camera_serial': world_camera_serial,
         'pupil_invisible_lsl_relay_version': version,
+        "session_id": str(session_id),
     }

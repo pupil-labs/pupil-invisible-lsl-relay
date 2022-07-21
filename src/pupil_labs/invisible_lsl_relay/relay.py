@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import uuid
 
 from pupil_labs.realtime_api import Device, StatusUpdateNotifier, receive_gaze_data
 from pupil_labs.realtime_api.models import Event, Sensor
@@ -21,15 +22,18 @@ class Relay:
         self.device_ip = device_ip
         self.device_port = device_port
         self.receiver = DataReceiver(device_ip, device_port)
+        self.session_id = uuid.uuid4()
         self.gaze_outlet = outlets.PupilInvisibleGazeOutlet(
             device_id=device_identifier,
             outlet_prefix=outlet_prefix,
             world_camera_serial=world_camera_serial,
+            session_id=self.session_id,
         )
         self.event_outlet = outlets.PupilInvisibleEventOutlet(
             device_id=device_identifier,
             outlet_prefix=outlet_prefix,
             world_camera_serial=world_camera_serial,
+            session_id=self.session_id,
         )
         self.gaze_sample_queue = asyncio.Queue()
         self.publishing_gaze_task = None
@@ -105,7 +109,10 @@ class Relay:
         if time_sync_interval:
             time_sync_task = asyncio.create_task(
                 send_events_in_interval(
-                    self.device_ip, self.device_port, time_sync_interval
+                    self.device_ip,
+                    self.device_port,
+                    self.session_id,
+                    time_sync_interval,
                 )
             )
             tasks.append(time_sync_task)
@@ -163,11 +170,11 @@ def handle_done_pending_tasks(done, pending):
 
 
 # send events in intervals
-async def send_events_in_interval(device_ip, device_port, sec=60):
+async def send_events_in_interval(device_ip, device_port, session_id, sec=60):
     n_events_sent = 0
     while True:
         await send_timesync_event(
-            device_ip, device_port, f'lsl.time_sync.{n_events_sent}'
+            device_ip, device_port, f'lsl.time_sync.{session_id}.{n_events_sent}'
         )
         await asyncio.sleep(sec)
         n_events_sent += 1
