@@ -30,5 +30,3 @@ and off four times. This created a simultaneous signal recorded by the Eye Camer
 
 After that, we stopped all recordings in the inverse order (first in the companion app, then in the LabRecorder) and
 stopped the lsl relay.
-
-
