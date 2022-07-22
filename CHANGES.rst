@@ -1,3 +1,8 @@
+2.1.1
+#####
+- Add command line tool for lsl-to-cloud time alignment and vice versa
+- Change the events sent for time alignment to include a unique session id
+
 2.1.0
 #####
 - Add check for correct epoch
