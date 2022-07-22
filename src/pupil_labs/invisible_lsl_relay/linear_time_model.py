@@ -1,7 +1,7 @@
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import ClassVar, Optional, Type, overload
+from typing import ClassVar, Optional, Type, Union, overload
 
 import numpy as np
 import pandas as pd
@@ -21,14 +21,14 @@ class TimeAlignmentModels:
     lsl_to_cloud: linear_model.LinearRegression
 
     @overload
-    def to_json(self, path: Path) -> None:
+    def to_json(self, path: Union[str, Path]) -> None:
         ...
 
     @overload
     def to_json(self, path: None) -> str:
         ...
 
-    def to_json(self, path: Optional[Path] = None) -> Optional[str]:
+    def to_json(self, path: Union[None, str, Path] = None) -> Optional[str]:
         mapping_parameters = {
             'cloud_to_lsl': {
                 'intercept': self.cloud_to_lsl.intercept_,
@@ -45,13 +45,13 @@ class TimeAlignmentModels:
         }
         serialized = json.dumps(mapping_parameters, indent=4)
         if path is not None:
-            path.write_text(serialized)
+            Path(path).write_text(serialized)
         else:
             return serialized
 
     @classmethod
-    def read_json(cls: Type[Self], path: Path) -> Self:
-        mapping = json.loads(path.read_text())
+    def read_json(cls: Type[Self], path: Union[str, Path]) -> Self:
+        mapping = json.loads(Path(path).read_text())
         mapping_version = mapping["info"]["version"]
         if mapping_version != cls._version:
             raise ValueError(
@@ -68,7 +68,7 @@ class TimeAlignmentModels:
     ) -> linear_model.LinearRegression:
         model = linear_model.LinearRegression()
         model.intercept_ = params['intercept']
-        model.coef_ = np.array(params['intercept'])
+        model.coef_ = np.array([params['intercept']])
         return model
 
 
